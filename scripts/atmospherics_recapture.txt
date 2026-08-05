@@ -1,11 +1,13 @@
-alias sensor      d0   # Gas Sensor, shared room
-alias recyclePump d1   # Volume Pump, pulls room air into Filtration
-alias filtration  d2   # Filtration unit (O2 + CO2 filters installed)
+alias sensor              d0   # Gas Sensor, shared room
+alias recyclePump         d1   # Volume Pump, pulls room air into the filtration manifold
+alias filtrationCO2       d2   # Filtration unit, O2 + CO2 filters installed
+alias filtrationPollutant d3   # Filtration unit, Pollutant filter installed
+alias filtrationVolatiles d4   # Filtration unit, Volatiles filter installed
 
-# Triggers on CO2 partial pressure, not total room pressure - matches Regulation's
-# CO2_TARGET (20). Same convention as Regulation: RatioCarbonDioxide * Pressure gives
-# CO2's partial pressure in kPa, which is ~equivalent to percent since the room runs
-# at ~100 kPa total.
+# CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
+# only the excess above target gets skimmed. Pollutant and Volatiles have no target at
+# all though - there's no "acceptable" amount of either, so those two just trigger on
+# bare presence (ratio > 0), no hysteresis band to hover near.
 define CO2_HIGH 20
 define CO2_LOW  19
 
@@ -16,14 +18,27 @@ l r0 sensor Pressure
 l r1 sensor RatioCarbonDioxide
 mul r1 r1 r0   # CO2 partial pressure
 
-l r2 recyclePump On
-beqz r2 pump_off
+l r2 filtrationCO2 On
+beqz r2 co2_off
 sgt r3 r1 CO2_LOW
-j pump_set
-pump_off:
+j co2_set
+co2_off:
 sgt r3 r1 CO2_HIGH
-pump_set:
-s recyclePump On r3
-s filtration On r3
+co2_set:
+s filtrationCO2 On r3
+
+l r4 sensor RatioPollutant
+sgt r5 r4 0
+s filtrationPollutant On r5
+
+l r6 sensor RatioVolatiles
+sgt r7 r6 0
+s filtrationVolatiles On r7
+
+# Pump runs whenever any one of the three filters needs to - OR via max, since each
+# flag is 0/1
+max r8 r3 r5
+max r8 r8 r7
+s recyclePump On r8
 
 j main

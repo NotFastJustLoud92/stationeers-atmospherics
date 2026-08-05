@@ -395,8 +395,8 @@
           </tr>
           <tr>
             <td><span class="swatch" style="background:#e2695a"></span>Recapture Loop <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 800</span></td>
-            <td class="mono">Recycle Pump → Filtration (O2+CO2 filters)</td>
-            <td>Skims excess CO2 back to the buffers once it climbs above 20%</td>
+            <td class="mono">Recycle Pump → 3× Filtration (O2+CO2 / Pollutant / Volatiles)</td>
+            <td>CO2 skimmed above 20%; Pollutant &amp; Volatiles filtered on any presence — see <code>atmospherics_recapture.ic10</code> below.</td>
           </tr>
         </tbody>
       </table>
@@ -442,6 +442,10 @@
       <li class="check-item">
         <span class="tag done">Rev B, 2026-08-04</span>
         <span class="body"><strong>Companion P&amp;ID simplified and corrected.</strong> Rev A drew a separate "IC Housing" chip with leader lines to every device — one of those chips ended up rendered on top of a pump in Area 600, an overlap caught by direct review. Rev B removes the chips entirely (pin number now lives inline on each device's own tag, e.g. <code>PA-201 (d0)</code>) and relabels every sensor from generic ISA codes (PT/TT/AT) to the real in-game devices: <strong>Pipe Analyzer</strong> (tag PA, on a pipe network) or <strong>Gas Sensor</strong> (tag GS, in open atmosphere). Area numbers (100–800) used there now also appear next to each zone and script here for cross-reference.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-04</span>
+        <span class="body"><strong>Recapture now also scrubs Pollutant and Volatiles, not just CO2.</strong> Two more Filtration units added to Area 800 (<code>filtrationPollutant</code>, <code>filtrationVolatiles</code>), each independently gated on bare presence (<code>RatioPollutant</code>/<code>RatioVolatiles</code> &gt; 0) rather than a hysteresis band — unlike CO2, there's no acceptable target level for either, so any trace at all triggers that filter. <code>recyclePump</code> now runs whenever any of the three filters is active (OR via <code>max</code>), not just on the CO2 trigger.</span>
       </li>
       <li class="check-item">
         <span class="tag done">Simplified</span>
@@ -567,6 +571,10 @@
       <li class="check-item">
         <span class="tag verify">Verify</span>
         <span class="body"><strong><code>TEMP_TRIP</code> (523K/250°C) and <code>TEMP_LOW</code> (373K/100°C)</strong> in the new <code>atmospherics_electrolyzer.ic10</code> are a deliberately wide safety margin under the documented 300°C (573K) autoignition point, not a wiki-confirmed safe operating ceiling for this specific device. Confirm normal electrolyzer output temperature stays well clear of 250°C in practice — if it runs hotter than expected, the margin needs to be bigger, not smaller.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong>Pollutant/Volatiles filters triggering on bare presence (<code>RatioPollutant</code>/<code>RatioVolatiles</code> &gt; 0)</strong> assumes those ratios read as a clean 0 when absent, with no floating-point noise that could cause the filter to chatter on/off. Reasonable but unconfirmed — watch for rapid on/off cycling on <code>filtrationPollutant</code>/<code>filtrationVolatiles</code> once running; if it chatters, a small epsilon threshold (e.g. &gt; 0.001) fixes it.</span>
       </li>
       <li class="check-item">
         <span class="tag open">Untested</span>
@@ -787,15 +795,17 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop · 3 pins · now triggers on CO2%, not pressure (2026-08-02)</span></div>
-      <pre>alias sensor      d0   <span class="c"># Gas Sensor, shared room</span>
-alias recyclePump d1   <span class="c"># Volume Pump, pulls room air into Filtration</span>
-alias filtration  d2   <span class="c"># Filtration unit (O2 + CO2 filters installed)</span>
+      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop · 5 pins · Pollutant/Volatiles filtration added (2026-08-04)</span></div>
+      <pre>alias sensor              d0   <span class="c"># Gas Sensor, shared room</span>
+alias recyclePump         d1   <span class="c"># Volume Pump, pulls room air into the filtration manifold</span>
+alias filtrationCO2       d2   <span class="c"># Filtration unit, O2 + CO2 filters installed</span>
+alias filtrationPollutant d3   <span class="c"># Filtration unit, Pollutant filter installed</span>
+alias filtrationVolatiles d4   <span class="c"># Filtration unit, Volatiles filter installed</span>
 
-<span class="c"># Triggers on CO2 partial pressure, not total room pressure - matches Regulation's
-# CO2_TARGET (20). Same convention as Regulation: RatioCarbonDioxide * Pressure gives
-# CO2's partial pressure in kPa, which is ~equivalent to percent since the room runs
-# at ~100 kPa total.</span>
+<span class="c"># CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
+# only the excess above target gets skimmed. Pollutant and Volatiles have no target at
+# all though - there's no "acceptable" amount of either, so those two just trigger on
+# bare presence (ratio > 0), no hysteresis band to hover near.</span>
 define CO2_HIGH 20
 define CO2_LOW  19
 
@@ -806,15 +816,28 @@ l r0 sensor Pressure
 l r1 sensor RatioCarbonDioxide
 mul r1 r1 r0   <span class="c"># CO2 partial pressure</span>
 
-l r2 recyclePump On
-beqz r2 pump_off
+l r2 filtrationCO2 On
+beqz r2 co2_off
 sgt r3 r1 CO2_LOW
-j pump_set
-pump_off:
+j co2_set
+co2_off:
 sgt r3 r1 CO2_HIGH
-pump_set:
-s recyclePump On r3
-s filtration On r3
+co2_set:
+s filtrationCO2 On r3
+
+l r4 sensor RatioPollutant
+sgt r5 r4 0
+s filtrationPollutant On r5
+
+l r6 sensor RatioVolatiles
+sgt r7 r6 0
+s filtrationVolatiles On r7
+
+<span class="c"># Pump runs whenever any one of the three filters needs to - OR via max, since each
+# flag is 0/1</span>
+max r8 r3 r5
+max r8 r8 r7
+s recyclePump On r8
 
 j main</pre>
     </div>
