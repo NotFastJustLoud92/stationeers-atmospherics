@@ -1,0 +1,47 @@
+alias rawSensor   d0   # Pipe Analyzer / Gas Sensor on the raw intake buffer (Pressure)
+alias vent1       d1   # Large Powered Vent, Mode set to Inward once in-game
+alias vent2       d2   # remove aliases for any vent pins you don't populate
+alias vent3       d3
+alias vent4       d4
+alias reliefValve d5   # Digital Valve, raw buffer -> exterior dump (backup if vent gating lags)
+
+# Powered Vents have NO internal pressure limiter (unlike Active Vents, which self-cap via
+# PressureInternal/PressureExternal) - this loop is the only thing standing between them and
+# a burst raw-buffer pipe. Confirmed via community sources after pipes actually blew leaving
+# vents always-on. Gas pipes burst at 60,795 kPa; these numbers are a conservative starting
+# point, not that ceiling. Raise RAW_TARGET later if the compressor bank wants a
+# higher-pressure feed, just keep RELIEF_HIGH with margin under 60,795.
+define RAW_TARGET  4000
+define RAW_LOW     3500
+
+define RELIEF_HIGH 8000
+define RELIEF_LOW  7500
+
+main:
+yield
+
+# Vent gating, hysteresis on/off, ganged across all populated vent pins
+l r0 rawSensor Pressure
+l r1 vent1 On
+beqz r1 vent_off
+slt r2 r0 RAW_TARGET
+j vent_set
+vent_off:
+slt r2 r0 RAW_LOW
+vent_set:
+s vent1 On r2
+s vent2 On r2
+s vent3 On r2
+s vent4 On r2
+
+# Overpressure relief backstop, hysteresis on/off
+l r3 reliefValve On
+beqz r3 relief_off
+sgt r4 r0 RELIEF_LOW
+j relief_set
+relief_off:
+sgt r4 r0 RELIEF_HIGH
+relief_set:
+s reliefValve On r4
+
+j main

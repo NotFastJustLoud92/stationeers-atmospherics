@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atmospherics System — P&amp;ID</title>
+<style>
+  :root{
+    --paper: #f2ede0;
+    --paper-line: #ddd4bb;
+    --ink: #22303b;
+    --ink-2: #52616c;
+    --ink-3: #8b98a1;
+    --boundary: #2f6690;
+    --boundary-soft: rgba(47,102,144,0.08);
+    --alarm: #a8452c;
+    --alarm-soft: rgba(168,69,44,0.09);
+    --paper-panel: #ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #10161d;
+      --paper-line: #202b36;
+      --ink: #dbe6ec;
+      --ink-2: #9fb0ba;
+      --ink-3: #5c6b75;
+      --boundary: #74b8e0;
+      --boundary-soft: rgba(116,184,224,0.08);
+      --alarm: #e8836a;
+      --alarm-soft: rgba(232,131,106,0.1);
+      --paper-panel: #151c24;
+    }
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+  }
+
+  .sheet-wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+  }
+
+  .page-head{
+    margin-bottom: 16px;
+  }
+  .page-head .kicker{
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .page-head h1{
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 4px 0 6px;
+    text-wrap: balance;
+  }
+  .page-head p{
+    font-size: 14px;
+    color: var(--ink-2);
+    max-width: 72ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .drawing-scroll{
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 1px solid var(--paper-line);
+    background: var(--paper-panel);
+    margin-top: 20px;
+  }
+
+  figure{ margin: 0; }
+  figcaption{
+    font-size: 12.5px;
+    color: var(--ink-2);
+    padding: 10px 4px 0;
+    max-width: 90ch;
+    line-height: 1.5;
+  }
+
+  svg.pid{
+    display: block;
+    color: var(--ink);
+  }
+  svg.pid text{
+    fill: currentColor;
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+  }
+  svg.pid .mono{
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet-wrap">
+  <div class="page-head">
+    <div class="kicker">Cragspire Station · Mars2 / Hellas Crags</div>
+    <h1>Atmospherics System — Process &amp; Instrumentation Diagram</h1>
+    <p>Full process flow for the redesigned collection, liquefaction, supply, and regulation system, sectioned by IC10 housing per control loop. Companion to the "Atmospherics Room — Handoff Log" (<code>handoff-log.html</code>) and the scripts in <code>../scripts/</code>. Schematic only, not to scale — status: designed, not yet commissioned in-game.</p>
+  </div>
+
+  <div class="drawing-scroll">
+    <figure>
+      <svg class="pid" role="img" viewBox="0 0 2440 1780" width="2440" height="1780" xmlns="http://www.w3.org/2000/svg"
+           aria-label="P&amp;ID of the Cragspire atmospherics system showing eight numbered process areas — Collection, Compression and Cooling, Phase Separation and Storage, CO2 Supply, O2 Supply, Regulation, Room, and Recapture — with tanks, pumps, valves, instruments, and the IC10 housing each field device is wired to.">
+
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 Z" fill="currentColor"/>
+          </marker>
+
+          <g id="sym-tank">
+            <rect x="-38" y="-22" width="76" height="44" rx="7" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+            <line x1="-38" y1="-9" x2="38" y2="-9" stroke="currentColor" stroke-width="1"/>
+          </g>
+
+          <g id="sym-pump">
+            <circle cx="0" cy="0" r="16" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+            <path d="M-6,-8 L9,0 L-6,8 Z" fill="currentColor"/>
+          </g>
+
+          <g id="sym-valve">
+            <path d="M-13,-9 L0,0 L-13,9 Z M13,-9 L0,0 L13,9 Z" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </g>
+
+          <g id="sym-instr">
+            <circle cx="0" cy="0" r="15" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+          </g>
+
+          <g id="sym-lamp">
+            <circle cx="0" cy="0" r="9" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+            <circle cx="0" cy="0" r="3" fill="currentColor"/>
+          </g>
+
+          <g id="sym-filter">
+            <rect x="-24" y="-16" width="48" height="32" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+            <line x1="-24" y1="-16" x2="24" y2="16" stroke="currentColor" stroke-width="1.2"/>
+            <line x1="-24" y1="0" x2="8" y2="16" stroke="currentColor" stroke-width="1.2"/>
+            <line x1="-24" y1="16" x2="-8" y2="16" stroke="currentColor" stroke-width="1.2"/>
+            <line x1="0" y1="-16" x2="24" y2="0" stroke="currentColor" stroke-width="1.2"/>
+          </g>
+
+          <g id="sym-vent">
+            <rect x="-20" y="-20" width="40" height="40" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+            <path d="M-10,10 Q0,-14 10,10" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M4,3 L10,10 L16,2" fill="none" stroke="currentColor" stroke-width="2"/>
+          </g>
+
+          <g id="sym-equip">
+            <rect x="-46" y="-24" width="92" height="48" rx="3" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+          </g>
+
+          <g id="sym-sep">
+            <rect x="-46" y="-16" width="92" height="32" rx="16" fill="var(--paper-panel)" stroke="currentColor" stroke-width="2"/>
+          </g>
+
+          <g id="sym-housing">
+            <rect x="-70" y="-38" width="140" height="76" rx="2" fill="var(--boundary-soft)" stroke="var(--boundary)" stroke-width="2"/>
+            <line x1="-70" y1="-22" x2="70" y2="-22" stroke="var(--boundary)" stroke-width="1"/>
+          </g>
+
+          <g id="sym-opc">
+            <path d="M-30,-14 L20,-14 L32,0 L20,14 L-30,14 Z" fill="var(--paper-panel)" stroke="currentColor" stroke-width="1.6"/>
+          </g>
+        </defs>
+
+        <!-- sheet frame -->
+        <rect x="20" y="20" width="2400" height="1740" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="20" y1="96" x2="2420" y2="96" stroke="currentColor" stroke-width="1.4"/>
+        <line x1="20" y1="1560" x2="2420" y2="1560" stroke="currentColor" stroke-width="1.4"/>
+
+        <!-- title bar -->
+        <text x="40" y="52" font-size="21" font-weight="600" letter-spacing="0.4">ATMOSPHERICS SYSTEM — PROCESS &amp; INSTRUMENTATION DIAGRAM</text>
+        <text x="40" y="76" font-size="12.5" fill="var(--ink-2)">Cragspire Station · Mars2 / Hellas Crags · shared human + plant base atmosphere</text>
+        <text x="2400" y="52" font-size="13" text-anchor="end" class="mono">DWG ATM-PID-001&#160;&#160;REV A</text>
+        <text x="2400" y="76" font-size="12" text-anchor="end" fill="var(--ink-2)" class="mono">2026-08-02 · SCHEMATIC · NOT TO SCALE</text>
+
+        <!-- ================= AREA 100 — COLLECTION ================= -->
+        <rect x="200" y="150" width="410" height="470" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <text x="216" y="178" font-size="14" font-weight="600" fill="var(--boundary)">AREA 100 — COLLECTION</text>
+        <text x="216" y="196" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_intake.ic10]</text>
+
+        <!-- mars exterior -->
+        <g transform="translate(90,320)">
+          <path d="M-40,60 L40,60 L30,20 L-30,20 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 3"/>
+          <text x="0" y="-4" font-size="12" text-anchor="middle">MARS</text>
+          <text x="0" y="12" font-size="12" text-anchor="middle">EXTERIOR</text>
+          <text x="0" y="82" font-size="10.5" text-anchor="middle" fill="var(--ink-2)">&gt;90% CO2</text>
+        </g>
+        <line x1="130" y1="330" x2="240" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+
+        <!-- vent (multiplicity stack) -->
+        <g transform="translate(275,330)">
+          <use href="#sym-vent" x="-8" y="-8" opacity="0.4"/>
+          <use href="#sym-vent" x="-4" y="-4" opacity="0.7"/>
+          <use href="#sym-vent"/>
+          <text x="0" y="46" font-size="11.5" text-anchor="middle" class="mono">VNT-101…104 (4×)</text>
+          <text x="0" y="60" font-size="10.5" text-anchor="middle" fill="var(--ink-2)">Large Powered Vent, Mode=Inward</text>
+        </g>
+        <line x1="315" y1="330" x2="430" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="345" y="322" font-size="10" fill="var(--ink-2)">RAW MARS GAS</text>
+
+        <!-- header pipe to PT-101 and tank -->
+        <use href="#sym-instr" x="450" y="330"/>
+        <text x="450" y="334" font-size="10.5" text-anchor="middle">PT</text>
+        <text x="450" y="374" font-size="11" text-anchor="middle" class="mono">PT-101</text>
+        <text x="450" y="388" font-size="10" text-anchor="middle" fill="var(--ink-2)">rawSensor</text>
+
+        <line x1="465" y1="330" x2="530" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-tank" x="565" y="330"/>
+        <text x="565" y="334" font-size="10.5" text-anchor="middle">TK-101</text>
+        <text x="565" y="376" font-size="10" text-anchor="middle" fill="var(--ink-2)">Raw Buffer</text>
+
+        <!-- relief -->
+        <line x1="450" y1="345" x2="450" y2="430" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <use href="#sym-valve" x="450" y="450" transform="rotate(90 450 450)"/>
+        <text x="470" y="454" font-size="10.5" class="mono">XV-101</text>
+        <text x="470" y="467" font-size="9.5" fill="var(--ink-2)">reliefValve</text>
+        <line x1="450" y1="470" x2="450" y2="520" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="450" y="536" font-size="10" text-anchor="middle" fill="var(--alarm)">TO EXTERIOR — OVERPRESSURE DUMP</text>
+
+        <!-- housing -->
+        <use href="#sym-housing" x="405" y="580"/>
+        <text x="405" y="576" font-size="11.5" text-anchor="middle" font-weight="600">IC HOUSING</text>
+        <text x="405" y="592" font-size="10" text-anchor="middle" class="mono">atmospherics_intake.ic10</text>
+        <text x="405" y="606" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">d0 PT-101 · d1 VNT-101 · d5 XV-101</text>
+        <line x1="405" y1="542" x2="405" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="450" y1="390" x2="405" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="275" y1="370" x2="405" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+
+        <!-- ================= AREA 200 — COMPRESSION & COOLING ================= -->
+        <rect x="650" y="150" width="430" height="470" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <text x="666" y="178" font-size="14" font-weight="600" fill="var(--boundary)">AREA 200 — COMPRESSION &amp; COOLING</text>
+        <text x="666" y="196" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_compression.ic10]</text>
+
+        <line x1="610" y1="330" x2="700" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="655" y="322" font-size="10" fill="var(--ink-2)">RAW GAS</text>
+
+        <use href="#sym-pump" x="730" y="290"/>
+        <text x="730" y="256" font-size="11" text-anchor="middle" class="mono">PU-201</text>
+        <use href="#sym-pump" x="730" y="360"/>
+        <text x="730" y="396" font-size="11" text-anchor="middle" class="mono">PU-202</text>
+        <text x="730" y="410" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">Turbo Volume Pump ×2</text>
+        <line x1="700" y1="330" x2="714" y2="290" stroke="currentColor" stroke-width="2"/>
+        <line x1="700" y1="330" x2="714" y2="360" stroke="currentColor" stroke-width="2"/>
+        <line x1="746" y1="290" x2="800" y2="290" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="746" y1="360" x2="800" y2="360" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="800" y1="290" x2="800" y2="330" stroke="currentColor" stroke-width="2"/>
+        <line x1="800" y1="330" x2="800" y2="360" stroke="currentColor" stroke-width="2"/>
+
+        <use href="#sym-instr" x="850" y="330"/>
+        <text x="850" y="334" font-size="10.5" text-anchor="middle">PT</text>
+        <text x="850" y="374" font-size="11" text-anchor="middle" class="mono">PT-201</text>
+        <text x="850" y="388" font-size="10" text-anchor="middle" fill="var(--ink-2)">tankSensor</text>
+        <line x1="800" y1="330" x2="835" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+
+        <!-- passive cooling subbox -->
+        <rect x="900" y="230" width="160" height="200" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="980" y="222" font-size="10" text-anchor="middle" fill="var(--ink-2)">PASSIVE — NOT IC-CONTROLLED</text>
+        <line x1="865" y1="330" x2="920" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <path d="M925,330 q10,-20 20,0 t20,0 t20,0" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="980" y="270" font-size="10.5" text-anchor="middle" fill="var(--ink-2)">exterior radiators</text>
+        <use href="#sym-instr" x="980" y="380"/>
+        <text x="980" y="384" font-size="10.5" text-anchor="middle">TT</text>
+        <text x="980" y="418" font-size="11" text-anchor="middle" class="mono">TT-201</text>
+        <text x="980" y="430" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">coolSensor · Kelvin</text>
+
+        <use href="#sym-lamp" x="1030" y="330"/>
+        <text x="1030" y="310" font-size="11" text-anchor="middle" class="mono">LI-201</text>
+        <text x="1030" y="358" font-size="9" text-anchor="middle" fill="var(--ink-2)">CO2 condensing?</text>
+
+        <!-- relief 200 -->
+        <line x1="850" y1="345" x2="850" y2="440" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <use href="#sym-valve" x="850" y="460" transform="rotate(90 850 460)"/>
+        <text x="870" y="464" font-size="10.5" class="mono">XV-201</text>
+        <line x1="850" y1="480" x2="850" y2="520" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="850" y="536" font-size="10" text-anchor="middle" fill="var(--alarm)">TO EXTERIOR — OVERPRESSURE DUMP</text>
+
+        <use href="#sym-housing" x="800" y="580"/>
+        <text x="800" y="576" font-size="11.5" text-anchor="middle" font-weight="600">IC HOUSING</text>
+        <text x="800" y="592" font-size="10" text-anchor="middle" class="mono">atmospherics_compression.ic10</text>
+        <text x="800" y="606" font-size="9" text-anchor="middle" fill="var(--ink-2)">d0 PT-201 · d1 PU-201 · d2 PU-202 · d3 XV-201 · d4 TT-201 · d5 LI-201</text>
+        <line x1="730" y1="376" x2="800" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="850" y1="390" x2="800" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="980" y1="396" x2="800" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="1030" y1="346" x2="800" y2="558" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+
+        <line x1="1080" y1="330" x2="1130" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="1082" y="322" font-size="10" fill="var(--ink-2)">HP GAS ≈20,000 kPa</text>
+
+        <!-- ================= AREA 300 — SEPARATION & STORAGE ================= -->
+        <rect x="1130" y="150" width="560" height="470" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="1146" y="178" font-size="14" font-weight="600">AREA 300 — PHASE SEPARATION &amp; STORAGE</text>
+        <text x="1146" y="196" font-size="11.5" fill="var(--ink-2)">passive — no IC10 housing</text>
+
+        <use href="#sym-sep" x="1230" y="290"/>
+        <text x="1230" y="286" font-size="10.5" text-anchor="middle">CV-301</text>
+        <text x="1230" y="330" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">Condensation Valve — passive separator</text>
+
+        <line x1="1276" y1="285" x2="1360" y2="240" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="1330" y="228" font-size="9.5" fill="var(--ink-2)">N2/O2 GAS</text>
+        <use href="#sym-tank" x="1440" y="240"/>
+        <use href="#sym-tank" x="1500" y="240" opacity="0.55"/>
+        <use href="#sym-tank" x="1520" y="240" opacity="0.3"/>
+        <text x="1440" y="220" font-size="11" text-anchor="middle" class="mono">TK-302</text>
+        <text x="1440" y="280" font-size="10" text-anchor="middle" fill="var(--ink-2)">Large Tank bank, N2/O2 ≈66/33</text>
+
+        <line x1="1220" y1="316" x2="1220" y2="420" stroke="currentColor" stroke-width="2.4" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
+        <text x="1236" y="380" font-size="9.5" fill="var(--ink-2)">LIQUID CO2</text>
+        <use href="#sym-tank" x="1220" y="460"/>
+        <text x="1220" y="464" font-size="10" text-anchor="middle" class="mono">TK-301</text>
+        <text x="1220" y="502" font-size="10" text-anchor="middle" fill="var(--ink-2)">Liquid CO2 tank</text>
+        <text x="1220" y="518" font-size="9.5" text-anchor="middle" fill="var(--alarm)">⚠ liquid pipe burst 6,080 kPa —</text>
+        <text x="1220" y="531" font-size="9.5" text-anchor="middle" fill="var(--alarm)">unverified vs. CV-301 gas side, see Open Items</text>
+
+        <line x1="1610" y1="330" x2="1650" y2="330" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+
+        <!-- AREA 300 -> AREA 600 OPC -->
+        <use href="#sym-opc" x="1670" y="330"/>
+        <text x="1670" y="334" font-size="9.5" text-anchor="middle" class="mono">→600</text>
+        <text x="1670" y="358" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">N2/O2 supply</text>
+
+        <!-- ================= AREA 400 — CO2 SUPPLY ================= -->
+        <rect x="200" y="700" width="410" height="330" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <text x="216" y="728" font-size="14" font-weight="600" fill="var(--boundary)">AREA 400 — CO2 SUPPLY</text>
+        <text x="216" y="746" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_co2supply.ic10]</text>
+
+        <line x1="565" y1="352" x2="565" y2="670" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="565" y1="670" x2="420" y2="670" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="420" y1="670" x2="420" y2="780" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="480" y="663" font-size="10" fill="var(--ink-2)">RAW MARS AIR TAP (&gt;90% CO2), off TK-101</text>
+
+        <use href="#sym-valve" x="420" y="810"/>
+        <text x="420" y="792" font-size="10.5" text-anchor="middle" class="mono">XV-401</text>
+        <line x1="420" y1="826" x2="420" y2="860" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-filter" x="420" y="890"/>
+        <text x="420" y="932" font-size="10.5" text-anchor="middle" class="mono">FIL-401</text>
+        <text x="420" y="945" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtration, CO2 filter</text>
+
+        <line x1="444" y1="890" x2="500" y2="890" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-tank" x="540" y="890"/>
+        <text x="540" y="894" font-size="10" text-anchor="middle" class="mono">TK-401</text>
+        <text x="540" y="850" font-size="10" text-anchor="middle" fill="var(--ink-2)">CO2 buffer</text>
+        <use href="#sym-instr" x="540" y="940"/>
+        <text x="540" y="944" font-size="9.5" text-anchor="middle">PT</text>
+        <text x="540" y="972" font-size="10.5" text-anchor="middle" class="mono">PT-401</text>
+        <text x="540" y="984" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">co2Sensor</text>
+
+        <use href="#sym-housing" x="300" y="960"/>
+        <text x="300" y="956" font-size="11" text-anchor="middle" font-weight="600">IC HOUSING</text>
+        <text x="300" y="972" font-size="9.5" text-anchor="middle" class="mono">atmospherics_co2supply.ic10</text>
+        <text x="300" y="986" font-size="9" text-anchor="middle" fill="var(--ink-2)">d0 PT-401 · d1 XV-401 · d2 FIL-401</text>
+        <line x1="420" y1="826" x2="300" y2="922" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="420" y1="914" x2="300" y2="922" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="540" y1="954" x2="300" y2="998" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+
+        <use href="#sym-opc" x="620" y="890"/>
+        <text x="620" y="894" font-size="9.5" text-anchor="middle" class="mono">→600</text>
+        <text x="620" y="918" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">CO2 supply</text>
+        <text x="565" y="1010" font-size="9.5" text-anchor="start" fill="var(--ink-2)">← FIL-801 recovered CO2 (Area 800)</text>
+        <use href="#sym-opc" x="540" y="1010"/>
+        <text x="540" y="1014" font-size="9" text-anchor="middle" class="mono">←800</text>
+
+        <!-- ================= AREA 500 — O2 SUPPLY ================= -->
+        <rect x="650" y="700" width="500" height="380" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <text x="666" y="728" font-size="14" font-weight="600" fill="var(--boundary)">AREA 500 — O2 SUPPLY</text>
+        <text x="666" y="746" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_electrolyzer.ic10]</text>
+
+        <text x="672" y="800" font-size="10.5" fill="var(--ink-2)">ICE</text>
+        <text x="672" y="813" font-size="9.5" fill="var(--ink-2)">(manual haul)</text>
+        <line x1="672" y1="822" x2="720" y2="822" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-equip" x="770" y="822"/>
+        <text x="770" y="818" font-size="10.5" text-anchor="middle" class="mono">ELEC-501</text>
+        <text x="770" y="866" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">electrolyzer, ice-fed</text>
+
+        <line x1="770" y1="798" x2="770" y2="770" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="800" y="765" font-size="9.5" fill="var(--alarm)">H2 → exterior vent (unused byproduct)</text>
+
+        <line x1="816" y1="822" x2="860" y2="822" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-instr" x="890" y="822"/>
+        <text x="890" y="826" font-size="9.5" text-anchor="middle">TT</text>
+        <text x="890" y="862" font-size="10.5" text-anchor="middle" class="mono">TT-501</text>
+        <text x="890" y="875" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">outputTemp</text>
+
+        <line x1="890" y1="806" x2="890" y2="760" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <use href="#sym-valve" x="890" y="740" transform="rotate(-90 890 740)"/>
+        <text x="890" y="716" font-size="10" text-anchor="middle" class="mono">XV-501</text>
+        <text x="960" y="740" font-size="9.5" fill="var(--alarm)">⚠ trips 523K (250°C),</text>
+        <text x="960" y="753" font-size="9.5" fill="var(--alarm)">autoignites 573K (300°C)</text>
+
+        <use href="#sym-lamp" x="940" y="822"/>
+        <text x="940" y="798" font-size="10.5" text-anchor="middle" class="mono">LI-501</text>
+
+        <line x1="906" y1="822" x2="960" y2="822" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-instr" x="995" y="822"/>
+        <text x="995" y="826" font-size="9.5" text-anchor="middle">PT</text>
+        <text x="995" y="862" font-size="10.5" text-anchor="middle" class="mono">PT-501</text>
+        <line x1="1010" y1="822" x2="1050" y2="822" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-tank" x="1085" y="822"/>
+        <use href="#sym-tank" x="1105" y="822" opacity="0.4"/>
+        <text x="1085" y="800" font-size="10" text-anchor="middle" class="mono">TK-501</text>
+        <text x="1085" y="862" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">O2 tank bank</text>
+
+        <use href="#sym-housing" x="820" y="1000"/>
+        <text x="820" y="996" font-size="11" text-anchor="middle" font-weight="600">IC HOUSING</text>
+        <text x="820" y="1012" font-size="9.5" text-anchor="middle" class="mono">atmospherics_electrolyzer.ic10</text>
+        <text x="820" y="1026" font-size="9" text-anchor="middle" fill="var(--ink-2)">d0 PT-501 · d1 ELEC-501 · d2 TT-501 · d3 XV-501 · d4 LI-501</text>
+        <line x1="770" y1="846" x2="820" y2="962" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="890" y1="838" x2="820" y2="962" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="890" y1="740" x2="820" y2="962" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="940" y1="831" x2="820" y2="962" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="995" y1="838" x2="820" y2="962" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+
+        <use href="#sym-opc" x="1145" y="822"/>
+        <text x="1145" y="826" font-size="9.5" text-anchor="middle" class="mono">→600</text>
+        <text x="1145" y="850" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">O2 supply</text>
+        <text x="1000" y="1050" font-size="9.5" text-anchor="start" fill="var(--ink-2)">← FIL-801 recovered O2 (Area 800)</text>
+        <use href="#sym-opc" x="1085" y="1050"/>
+        <text x="1085" y="1054" font-size="9" text-anchor="middle" class="mono">←800</text>
+
+        <!-- ================= AREA 600 — REGULATION ================= -->
+        <rect x="1780" y="700" width="360" height="330" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <text x="1796" y="728" font-size="14" font-weight="600" fill="var(--boundary)">AREA 600 — REGULATION</text>
+        <text x="1796" y="746" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_regulation.ic10]</text>
+
+        <use href="#sym-opc" x="1800" y="790"/>
+        <text x="1800" y="794" font-size="9" text-anchor="middle" class="mono">300</text>
+        <line x1="1830" y1="790" x2="1870" y2="790" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <use href="#sym-pump" x="1900" y="790"/>
+        <text x="1900" y="770" font-size="10.5" text-anchor="middle" class="mono">PU-601</text>
+        <text x="1900" y="806" font-size="9" text-anchor="middle" fill="var(--ink-2)">n2Pump</text>
+
+        <use href="#sym-opc" x="1800" y="850"/>
+        <text x="1800" y="854" font-size="9" text-anchor="middle" class="mono">500</text>
+        <line x1="1830" y1="850" x2="1870" y2="850" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <use href="#sym-pump" x="1900" y="850"/>
+        <text x="1900" y="874" font-size="10.5" text-anchor="middle" class="mono">PU-602</text>
+        <text x="1900" y="890" font-size="9" text-anchor="middle" fill="var(--ink-2)">o2Pump</text>
+
+        <use href="#sym-opc" x="1800" y="910"/>
+        <text x="1800" y="914" font-size="9" text-anchor="middle" class="mono">400</text>
+        <line x1="1830" y1="910" x2="1870" y2="910" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <use href="#sym-pump" x="1900" y="910"/>
+        <text x="1900" y="934" font-size="10.5" text-anchor="middle" class="mono">PU-603</text>
+        <text x="1900" y="950" font-size="9" text-anchor="middle" fill="var(--ink-2)">co2Pump</text>
+
+        <line x1="1916" y1="790" x2="2000" y2="790" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="1916" y1="850" x2="2000" y2="850" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="1916" y1="910" x2="2000" y2="910" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="2000" y1="790" x2="2000" y2="910" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="2000" y1="850" x2="2060" y2="850" stroke="currentColor" stroke-width="2.6" marker-end="url(#arrow)"/>
+
+        <use href="#sym-instr" x="1950" y="990"/>
+        <text x="1950" y="994" font-size="9" text-anchor="middle">AT</text>
+        <text x="1950" y="1024" font-size="10.5" text-anchor="middle" class="mono">PT/AT-601</text>
+        <text x="1950" y="1037" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">sensor · Press. + Ratios</text>
+
+        <use href="#sym-housing" x="1960" y="900" transform="translate(0,0)"/>
+        <text x="1960" y="896" font-size="11" text-anchor="middle" font-weight="600">IC HOUSING</text>
+        <text x="1960" y="912" font-size="9.5" text-anchor="middle" class="mono">atmospherics_regulation.ic10</text>
+        <text x="1960" y="926" font-size="9" text-anchor="middle" fill="var(--ink-2)">d0 sensor · d1 PU-601 · d2 PU-602 · d3 PU-603</text>
+
+        <!-- ================= AREA 700 — ROOM ================= -->
+        <rect x="2160" y="700" width="240" height="200" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="2176" y="728" font-size="13" font-weight="600">AREA 700 — ROOM</text>
+        <text x="2176" y="746" font-size="10.5" fill="var(--ink-2)">9 × 15 × 2, solid — no IC10</text>
+        <text x="2280" y="800" font-size="11.5" text-anchor="middle" font-weight="600">SHARED</text>
+        <text x="2280" y="816" font-size="11.5" text-anchor="middle" font-weight="600">ATMOSPHERE</text>
+        <text x="2280" y="836" font-size="10.5" text-anchor="middle" fill="var(--ink-2)">60% N2 / 20% O2 / 20% CO2</text>
+        <text x="2280" y="850" font-size="10.5" text-anchor="middle" fill="var(--ink-2)">@ 100 kPa</text>
+        <text x="2280" y="875" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">↔ plant base, 12+ plants connected</text>
+
+        <!-- AREA 800 — RECAPTURE -->
+        <rect x="1780" y="1080" width="360" height="330" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <text x="1796" y="1108" font-size="14" font-weight="600" fill="var(--boundary)">AREA 800 — RECAPTURE</text>
+        <text x="1796" y="1126" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_recapture.ic10]</text>
+
+        <line x1="2280" y1="900" x2="2280" y2="1000" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="2280" y1="1000" x2="1960" y2="1000" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <line x1="1960" y1="1000" x2="1960" y2="1150" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="2000" y="994" font-size="9.5" fill="var(--ink-2)">ROOM AIR IN</text>
+
+        <use href="#sym-instr" x="1960" y="1190"/>
+        <text x="1960" y="1194" font-size="9" text-anchor="middle">AT</text>
+        <text x="1960" y="1226" font-size="10.5" text-anchor="middle" class="mono">PT/AT-801</text>
+        <text x="1960" y="1239" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">sensor · trips CO2 &gt;20 kPa</text>
+
+        <line x1="1960" y1="1206" x2="1900" y2="1260" stroke="currentColor" stroke-width="2"/>
+        <use href="#sym-pump" x="1870" y="1280"/>
+        <text x="1870" y="1310" font-size="10.5" text-anchor="middle" class="mono">PU-801</text>
+        <text x="1870" y="1324" font-size="9" text-anchor="middle" fill="var(--ink-2)">recyclePump</text>
+
+        <line x1="1886" y1="1280" x2="1950" y2="1280" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <use href="#sym-filter" x="1990" y="1280"/>
+        <text x="1990" y="1246" font-size="10.5" text-anchor="middle" class="mono">FIL-801</text>
+        <text x="1990" y="1324" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtration, O2+CO2 filters</text>
+
+        <line x1="2014" y1="1280" x2="2060" y2="1280" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <text x="2065" y="1276" font-size="9.5" fill="var(--ink-2)">scrubbed air → back to Area 700</text>
+        <path d="M2060,1280 C2140,1280 2140,880 2160,830" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
+
+        <use href="#sym-opc" x="1740" y="1280"/>
+        <text x="1740" y="1284" font-size="8.5" text-anchor="middle" class="mono">→400</text>
+        <text x="1650" y="1258" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered CO2</text>
+        <use href="#sym-opc" x="1740" y="1330"/>
+        <text x="1740" y="1334" font-size="8.5" text-anchor="middle" class="mono">→500</text>
+        <text x="1650" y="1358" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered O2</text>
+
+        <use href="#sym-housing" x="1870" y="1380"/>
+        <text x="1870" y="1376" font-size="11" text-anchor="middle" font-weight="600">IC HOUSING</text>
+        <text x="1870" y="1392" font-size="9.5" text-anchor="middle" class="mono">atmospherics_recapture.ic10</text>
+        <text x="1870" y="1406" font-size="9" text-anchor="middle" fill="var(--ink-2)">d0 sensor · d1 PU-801 · d2 FIL-801</text>
+
+        <!-- ================= LEGEND ================= -->
+        <text x="40" y="1592" font-size="13.5" font-weight="600">SYMBOL KEY</text>
+
+        <g transform="translate(58,1614) scale(0.5)"><use href="#sym-tank"/></g>
+        <text x="90" y="1620" font-size="11">Vessel / tank</text>
+
+        <g transform="translate(58,1650) scale(0.5)"><use href="#sym-pump"/></g>
+        <text x="90" y="1656" font-size="11">Pump (Volume / Turbo Volume Pump)</text>
+
+        <g transform="translate(58,1684) scale(0.5)"><use href="#sym-valve"/></g>
+        <text x="90" y="1690" font-size="11">On/off valve</text>
+
+        <g transform="translate(58,1718) scale(0.5)"><use href="#sym-instr"/></g>
+        <text x="66" y="1722" font-size="8" text-anchor="middle">PT</text>
+        <text x="90" y="1724" font-size="11">Instrument (PT press · TT temp · AT ratio)</text>
+
+        <g transform="translate(400,1614) scale(0.5)"><use href="#sym-filter"/></g>
+        <text x="422" y="1620" font-size="11">Filtration unit</text>
+
+        <g transform="translate(400,1650) scale(0.5)"><use href="#sym-vent"/></g>
+        <text x="422" y="1656" font-size="11">Powered vent</text>
+
+        <g transform="translate(400,1684) scale(0.5)"><use href="#sym-lamp"/></g>
+        <text x="422" y="1690" font-size="11">Indicator light (LI)</text>
+
+        <g transform="translate(400,1718) scale(0.5)"><use href="#sym-sep"/></g>
+        <text x="422" y="1724" font-size="11">Condensation Valve (passive separator)</text>
+
+        <line x1="720" y1="1610" x2="770" y2="1610" stroke="currentColor" stroke-width="2.4"/>
+        <text x="780" y="1614" font-size="11">Process gas pipe</text>
+        <line x1="720" y1="1636" x2="770" y2="1636" stroke="currentColor" stroke-width="2.4" stroke-dasharray="10 5"/>
+        <text x="780" y="1640" font-size="11">Process liquid pipe</text>
+        <line x1="720" y1="1662" x2="770" y2="1662" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
+        <text x="780" y="1666" font-size="11">Signal to IC10 pin (d0–d5)</text>
+        <g transform="translate(745,1690) scale(0.55)"><use href="#sym-opc"/></g>
+        <text x="780" y="1696" font-size="11">Off-page connector (long-haul tie to another area)</text>
+        <rect x="720" y="1710" width="50" height="16" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="780" y="1723" font-size="11">Area boundary — has an IC10 housing</text>
+
+        <text x="1130" y="1592" font-size="13.5" font-weight="600">NOTES</text>
+        <text x="1130" y="1616" font-size="10.5" fill="var(--ink-2)">1. Target atmosphere 60% N2 / 20% O2 / 20% CO2 @ 100 kPa; CO2 raised from 5% (2026-08-02), Ryan-confirmed safe.</text>
+        <text x="1130" y="1636" font-size="10.5" fill="var(--ink-2)">2. Compressor renamed Turbo Volume Pump throughout — "Compressor" is not an in-game device (2026-08-02).</text>
+        <text x="1130" y="1656" font-size="10.5" fill="var(--ink-2)">3. HP_TARGET, COND_TEMP_MAX, electrolyzer TEMP_TRIP, and all buffer sizes are reasoned placeholders — unverified in-game.</text>
+        <text x="1130" y="1676" font-size="10.5" fill="var(--ink-2)">4. Liquid CO2 line pressure headroom vs. CV-301 gas side is unresolved — see handoff log Open Items.</text>
+        <text x="1130" y="1696" font-size="10.5" fill="var(--ink-2)">5. Status: fully designed, zero housings run in-game as of this drawing.</text>
+
+        <text x="1780" y="1592" font-size="13.5" font-weight="600" text-anchor="start">DRAWING STATUS</text>
+        <rect x="1780" y="1604" width="600" height="112" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="1800" y="1628" font-size="11" class="mono">SYSTEM</text><text x="1920" y="1628" font-size="11">Atmospherics — Cragspire</text>
+        <text x="1800" y="1650" font-size="11" class="mono">AREAS</text><text x="1920" y="1650" font-size="11">100–800, 7 IC housings + passive Area 300/700</text>
+        <text x="1800" y="1672" font-size="11" class="mono">REV A</text><text x="1920" y="1672" font-size="11">2026-08-02 — CO2 supply added, Compressor→Turbo Volume Pump</text>
+        <text x="1800" y="1694" font-size="11" class="mono">STATUS</text><text x="1920" y="1694" font-size="11" fill="var(--alarm)">DESIGNED — NOT COMMISSIONED</text>
+
+      </svg>
+      <figcaption>Process flow: Mars atmosphere enters at Area 100, compresses and cools through Area 200, phase-separates in Area 300 into stored N2/O2 gas and byproduct liquid CO2. Areas 400 and 500 independently top up CO2 and O2 gas buffers. Area 600 pumps all three into the Area 700 room to the 60/20/20 target; Area 800 skims excess CO2 back out and returns recovered O2/CO2 to their buffers. Dashed blue boxes are IC10 housings — each field device's thin dashed leader shows which pin (d0–d5) it's wired to.</figcaption>
+    </figure>
+  </div>
+</div>
+</body>
+</html>

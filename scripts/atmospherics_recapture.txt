@@ -1,0 +1,29 @@
+alias sensor      d0   # Gas Sensor, shared room
+alias recyclePump d1   # Volume Pump, pulls room air into Filtration
+alias filtration  d2   # Filtration unit (O2 + CO2 filters installed)
+
+# Triggers on CO2 partial pressure, not total room pressure - matches Regulation's
+# CO2_TARGET (20). Same convention as Regulation: RatioCarbonDioxide * Pressure gives
+# CO2's partial pressure in kPa, which is ~equivalent to percent since the room runs
+# at ~100 kPa total.
+define CO2_HIGH 20
+define CO2_LOW  19
+
+main:
+yield
+
+l r0 sensor Pressure
+l r1 sensor RatioCarbonDioxide
+mul r1 r1 r0   # CO2 partial pressure
+
+l r2 recyclePump On
+beqz r2 pump_off
+sgt r3 r1 CO2_LOW
+j pump_set
+pump_off:
+sgt r3 r1 CO2_HIGH
+pump_set:
+s recyclePump On r3
+s filtration On r3
+
+j main

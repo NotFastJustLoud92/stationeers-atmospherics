@@ -1,0 +1,27 @@
+alias co2Sensor  d0   # Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)
+alias tapValve   d1   # Digital Valve, bleeds raw Mars air (pre-compression) into the Filtration inlet
+alias filtration d2   # Filtration unit, CO2 filter installed - purifies the raw bleed into the CO2 buffer
+
+# Regulation's co2Pump had no source anywhere in this build until now - it was pumping
+# against an empty supply. Raw Mars air is already >90% CO2, so this just taps a slipstream
+# of it off the same raw buffer atmospherics_intake.ic10 manages, before it gets compressed
+# and liquefied away in the collection pipeline, and purifies it through Filtration instead.
+# Placeholder buffer size, same pattern as the other supply-side buffers - tune once running.
+define CO2_TARGET 4000
+define CO2_LOW    3500
+
+main:
+yield
+
+l r0 co2Sensor Pressure
+l r1 tapValve On
+beqz r1 tap_off
+slt r2 r0 CO2_TARGET
+j tap_set
+tap_off:
+slt r2 r0 CO2_LOW
+tap_set:
+s tapValve On r2
+s filtration On r2
+
+j main

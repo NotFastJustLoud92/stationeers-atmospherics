@@ -1,0 +1,58 @@
+alias tankSensor  d0   # Pipe Analyzer / Gas Sensor on the HP storage manifold (Pressure)
+alias pump1       d1   # Turbo Volume Pump, Raw Intake -> HP network
+alias pump2       d2   # Turbo Volume Pump #2 - remove alias if you only run one
+alias reliefValve d3   # Digital Valve, HP network -> exterior dump (overpressure safety)
+alias coolSensor  d4   # Pipe Analyzer on the post-radiator cooling line (Temperature, Kelvin)
+alias statusLight d5   # Indicator light: On = cold enough for CO2 to be condensing right now
+
+# HP compression target.
+# CO2 triple point is 218K/517kPa (Stationeers wiki) - well below this target, so liquid
+# phase is reachable. Player reports put CO2 condensation onset near 296K (23C) at ~19,000
+# kPa - not wiki-table-verified, treat as directional. Verify against the in-game phase-change
+# graph once running; raise HP_TARGET if CO2 isn't condensing at your actual radiator temp.
+define HP_TARGET  20000
+define HP_LOW     19000
+
+# Overpressure relief. Large Tank bursts at 60,000 kPa; default trips at 75% of that.
+# If your pipe tier's burst rating is lower than the tank's, check Stationpedia and lower
+# RELIEF_HIGH to match the weakest link in the network.
+define RELIEF_HIGH 45000
+define RELIEF_LOW  43000
+
+# Cooling target. Temperature logic type is Kelvin, NOT Celsius (the old
+# atmospherics_intake_compression.txt used 0 assuming Celsius - dead code, never fired).
+# 293K = 20C, a safety margin under the ~296K condensation onset observed at ~19,000 kPa.
+define COND_TEMP_MAX 293
+
+main:
+yield
+
+# Compression, hysteresis on/off, ganged across both pumps
+l r0 tankSensor Pressure
+l r1 pump1 On
+beqz r1 comp_off
+slt r2 r0 HP_TARGET
+j comp_set
+comp_off:
+slt r2 r0 HP_LOW
+comp_set:
+s pump1 On r2
+s pump2 On r2
+
+# Overpressure relief, hysteresis on/off
+l r3 reliefValve On
+beqz r3 relief_off
+sgt r4 r0 RELIEF_LOW
+j relief_set
+relief_off:
+sgt r4 r0 RELIEF_HIGH
+relief_set:
+s reliefValve On r4
+
+# Cooling-loop telemetry only - the Condensation Valve downstream separates liquid
+# CO2 automatically and passively (no IC10 interface), this just reports on it
+l r5 coolSensor Temperature
+sle r6 r5 COND_TEMP_MAX
+s statusLight On r6
+
+j main

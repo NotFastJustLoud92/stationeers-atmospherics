@@ -1,0 +1,48 @@
+alias o2Sensor     d0   # Pipe Analyzer / Gas Sensor on the O2 output line to the O2 Tank bank (Pressure)
+alias electrolyzer d1   # Electrolyzer unit (On/Off)
+alias outputTemp   d2   # Pipe Analyzer on the electrolyzer's shared H2/O2 output network (Temperature, Kelvin)
+alias safetyVent   d3   # Digital Valve, output network -> exterior dump (autoignition safety)
+alias statusLight  d4   # On = temperature safety trip is active
+
+# Autoignition safety: the electrolyzer's output network autoignites above 300C (573K),
+# converting the O2/H2 mix to steam and causing further output to autocombust too - a real
+# explosion-equivalent failure mode, not a soft limit. Trip well below that with a wide
+# hysteresis band; better to trip early and stay tripped than chatter near the edge.
+define TEMP_TRIP 523   # 250C
+define TEMP_LOW  373   # 100C - resume only once well clear of the trip point
+
+# O2 supply gating - stop producing once the O2 tank bank is topped up, resume once
+# depleted. Not a safety concern, just avoids wasting power/water once storage is full.
+# Placeholder values, same as the other supply-side buffers in this build - tune once running.
+define O2_TARGET 4000
+define O2_LOW    3500
+
+main:
+yield
+
+# Temperature safety trip, hysteresis on/off, wide band on purpose
+l r0 outputTemp Temperature
+l r1 safetyVent On
+beqz r1 trip_off
+sge r2 r0 TEMP_LOW
+j trip_set
+trip_off:
+sge r2 r0 TEMP_TRIP
+trip_set:
+s safetyVent On r2
+s statusLight On r2
+
+# O2 supply gating, hysteresis on/off - forced off entirely while tripped
+l r3 o2Sensor Pressure
+l r4 electrolyzer On
+beqz r4 elec_off
+slt r5 r3 O2_TARGET
+j elec_set
+elec_off:
+slt r5 r3 O2_LOW
+elec_set:
+sub r6 1 r2
+mul r5 r5 r6
+s electrolyzer On r5
+
+j main

@@ -1,0 +1,8 @@
+alias target d0
+
+main:
+yield
+l r0 target PrefabHash
+l r1 target ReferenceId
+yield
+j main

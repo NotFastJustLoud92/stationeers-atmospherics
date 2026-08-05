@@ -1,0 +1,9 @@
+alias controlDoor  d0
+alias followerDoor d2
+
+main:
+yield
+l r0 controlDoor Open
+s followerDoor Open r0
+s followerDoor Lock 1
+j main

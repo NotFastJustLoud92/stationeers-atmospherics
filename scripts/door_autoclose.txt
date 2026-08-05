@@ -1,0 +1,23 @@
+alias door d0
+
+define WAIT 10
+
+main:
+yield
+l r0 door Open
+beqz r0 main
+
+move r1 0
+
+count:
+l r0 door Open
+beqz r0 main
+sge r2 r1 WAIT
+bnez r2 do_close
+sleep 1
+add r1 r1 1
+j count
+
+do_close:
+s door Open 0
+j main

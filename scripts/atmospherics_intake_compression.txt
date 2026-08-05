@@ -1,0 +1,36 @@
+alias hpSensor   d0   # Pipe Analyzer on HP Tank line (Pressure)
+alias compressor d1   # Compressor (Volume/Turbo Volume Pump)
+alias valve1     d2   # Digital Valve, Vent -> Raw Tank
+alias valve2     d3   # Digital Valve, Raw Tank -> Compressor
+alias coolSensor d4   # Pipe Analyzer on Cooling/radiator line (Temperature)
+alias valve3     d5   # Digital Valve, CO2 drain
+
+define VENT_TYPE HASH("StructurePoweredVentLarge")   # verify exact prefab in-game
+define VENT_NAME HASH("MarsVent")
+
+define HP_TARGET     3500
+define HP_LOW        3300
+define CO2_COND_TEMP 0
+
+main:
+yield
+
+lbn r2 VENT_TYPE VENT_NAME On Maximum
+s valve1 On r2
+
+l r0 hpSensor Pressure
+l r4 compressor On
+beqz r4 comp_off
+slt r5 r0 HP_TARGET
+j comp_set
+comp_off:
+slt r5 r0 HP_LOW
+comp_set:
+s compressor On r5
+s valve2 On r5
+
+l r1 coolSensor Temperature
+slt r6 r1 CO2_COND_TEMP
+s valve3 On r6
+
+j main
