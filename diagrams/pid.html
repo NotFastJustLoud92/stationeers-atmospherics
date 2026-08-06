@@ -439,58 +439,61 @@
         <text x="2280" y="535" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">↔ plant base, 12+ plants connected</text>
 
         <!-- AREA 800 — RECAPTURE -->
-        <rect x="1780" y="700" width="480" height="400" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <rect x="1780" y="700" width="480" height="520" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
         <text x="1796" y="728" font-size="14" font-weight="600" fill="var(--boundary)">AREA 800 — RECAPTURE</text>
         <text x="1796" y="746" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_recapture.ic10]</text>
 
-        <line x1="2280" y1="560" x2="2280" y2="660" stroke="currentColor" stroke-width="2.4"/>
-        <line x1="2280" y1="660" x2="1960" y2="660" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
-        <line x1="1960" y1="660" x2="1960" y2="810" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
-        <text x="2000" y="654" font-size="9.5" fill="var(--ink-2)">ROOM AIR IN</text>
+        <line x1="2280" y1="560" x2="2280" y2="650" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="2280" y1="650" x2="1960" y2="650" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <line x1="1960" y1="650" x2="1960" y2="745" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="2000" y="644" font-size="9.5" fill="var(--ink-2)">ROOM AIR IN</text>
 
-        <use href="#sym-instr" x="1960" y="850"/>
-        <text x="1960" y="854" font-size="9" text-anchor="middle">GS</text>
-        <text x="1960" y="886" font-size="10.5" text-anchor="middle" class="mono">GS-801 (d0)</text>
-        <text x="1960" y="899" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">sensor · Gas Sensor — CO2, Pollutant, Volatiles</text>
+        <use href="#sym-instr" x="1960" y="770"/>
+        <text x="1960" y="774" font-size="9" text-anchor="middle">GS</text>
+        <text x="1960" y="806" font-size="10.5" text-anchor="middle" class="mono">GS-801 (d0)</text>
+        <text x="1960" y="819" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">sensor · Gas Sensor — CO2, Pollutant, Volatiles</text>
 
-        <line x1="1960" y1="866" x2="1900" y2="920" stroke="currentColor" stroke-width="2"/>
-        <use href="#sym-pump" x="1870" y="940"/>
-        <text x="1870" y="970" font-size="10.5" text-anchor="middle" class="mono">PU-801 (d1)</text>
-        <text x="1870" y="984" font-size="9" text-anchor="middle" fill="var(--ink-2)">recyclePump</text>
+        <line x1="1960" y1="785" x2="1960" y2="834" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <use href="#sym-pump" x="1960" y="850"/>
+        <text x="1960" y="882" font-size="10.5" text-anchor="middle" class="mono">PU-801 (d1)</text>
+        <text x="1960" y="895" font-size="9" text-anchor="middle" fill="var(--ink-2)">recyclePump</text>
 
-        <line x1="1886" y1="940" x2="1930" y2="940" stroke="currentColor" stroke-width="2.2"/>
-        <line x1="1930" y1="940" x2="1986" y2="860" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="1930" y1="940" x2="1986" y2="940" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="1930" y1="940" x2="1986" y2="1020" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <!-- input bus feeding all three filters -->
+        <line x1="1976" y1="850" x2="2020" y2="850" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="2020" y1="850" x2="2020" y2="1110" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="2020" y1="900" x2="2070" y2="900" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="2020" y1="1010" x2="2070" y2="1010" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="2020" y1="1110" x2="2070" y2="1110" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
 
-        <use href="#sym-filter" x="2010" y="860"/>
-        <text x="2010" y="826" font-size="10.5" text-anchor="middle" class="mono">FIL-801 (d2)</text>
-        <text x="2010" y="904" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtrationCO2 · O2+CO2 filters</text>
+        <use href="#sym-filter" x="2100" y="900"/>
+        <text x="2100" y="934" font-size="10.5" text-anchor="middle" class="mono">FIL-801 (d2)</text>
+        <text x="2100" y="948" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtrationCO2 · O2+CO2 filters</text>
 
-        <use href="#sym-filter" x="2010" y="940"/>
-        <text x="2010" y="982" font-size="10.5" text-anchor="middle" class="mono">FIL-802 (d3)</text>
-        <text x="2010" y="995" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtrationPollutant · Pollutant filter</text>
-        <text x="2010" y="1008" font-size="9" text-anchor="middle" fill="var(--ink-2)">on whenever any is present</text>
+        <use href="#sym-filter" x="2100" y="1010"/>
+        <text x="2100" y="1044" font-size="10.5" text-anchor="middle" class="mono">FIL-802 (d3)</text>
+        <text x="2100" y="1058" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtrationPollutant · Pollutant filter</text>
+        <text x="2100" y="1071" font-size="9" text-anchor="middle" fill="var(--ink-2)">on whenever any is present</text>
 
-        <use href="#sym-filter" x="2010" y="1020"/>
-        <text x="2010" y="1062" font-size="10.5" text-anchor="middle" class="mono">FIL-803 (d4)</text>
-        <text x="2010" y="1075" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtrationVolatiles · Volatiles filter</text>
-        <text x="2010" y="1088" font-size="9" text-anchor="middle" fill="var(--ink-2)">on whenever any is present</text>
+        <use href="#sym-filter" x="2100" y="1110"/>
+        <text x="2100" y="1144" font-size="10.5" text-anchor="middle" class="mono">FIL-803 (d4)</text>
+        <text x="2100" y="1158" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">filtrationVolatiles · Volatiles filter</text>
+        <text x="2100" y="1171" font-size="9" text-anchor="middle" fill="var(--ink-2)">on whenever any is present</text>
 
-        <line x1="2034" y1="860" x2="2080" y2="860" stroke="currentColor" stroke-width="2"/>
-        <line x1="2034" y1="940" x2="2080" y2="940" stroke="currentColor" stroke-width="2"/>
-        <line x1="2034" y1="1020" x2="2080" y2="1020" stroke="currentColor" stroke-width="2"/>
-        <line x1="2080" y1="860" x2="2080" y2="1020" stroke="currentColor" stroke-width="2"/>
-        <line x1="2080" y1="940" x2="2130" y2="940" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
-        <text x="2135" y="936" font-size="9.5" fill="var(--ink-2)">scrubbed air → back to Area 700</text>
-        <path d="M2130,940 C2200,940 2200,540 2160,490" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
+        <!-- output bus, all three filters merge and return to the room -->
+        <line x1="2124" y1="900" x2="2170" y2="900" stroke="currentColor" stroke-width="2"/>
+        <line x1="2124" y1="1010" x2="2170" y2="1010" stroke="currentColor" stroke-width="2"/>
+        <line x1="2124" y1="1110" x2="2170" y2="1110" stroke="currentColor" stroke-width="2"/>
+        <line x1="2170" y1="900" x2="2170" y2="1110" stroke="currentColor" stroke-width="2"/>
+        <line x1="2170" y1="1010" x2="2210" y2="1010" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <text x="2215" y="1006" font-size="9.5" fill="var(--ink-2)">scrubbed air → back to Area 700</text>
+        <path d="M2210,1010 C2300,1010 2300,600 2220,555" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
 
-        <use href="#sym-opc" x="1740" y="850"/>
-        <text x="1740" y="854" font-size="8.5" text-anchor="middle" class="mono">→400</text>
-        <text x="1650" y="828" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered CO2 (FIL-801)</text>
-        <use href="#sym-opc" x="1740" y="885"/>
-        <text x="1740" y="889" font-size="8.5" text-anchor="middle" class="mono">→500</text>
-        <text x="1650" y="913" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered O2 (FIL-801)</text>
+        <use href="#sym-opc" x="1720" y="900"/>
+        <text x="1720" y="904" font-size="8.5" text-anchor="middle" class="mono">→400</text>
+        <text x="1630" y="878" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered CO2 (FIL-801)</text>
+        <use href="#sym-opc" x="1720" y="945"/>
+        <text x="1720" y="949" font-size="8.5" text-anchor="middle" class="mono">→500</text>
+        <text x="1630" y="963" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered O2 (FIL-801)</text>
 
         <!-- ================= LEGEND ================= -->
         <text x="40" y="1412" font-size="13.5" font-weight="600">SYMBOL KEY</text>
