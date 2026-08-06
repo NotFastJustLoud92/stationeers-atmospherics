@@ -370,7 +370,7 @@
           </tr>
           <tr>
             <td><span class="swatch" style="background:#5a8fd6"></span>Cooling <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 200/300</span></td>
-            <td class="mono">Ext. radiators + Condensation Valve</td>
+            <td class="mono">Ext. Medium Radiator (radiative) + Condensation Valve</td>
             <td>Condense CO2 to liquid via phase change</td>
           </tr>
           <tr>
@@ -479,8 +479,8 @@
           </tr>
           <tr>
             <td>Cooling</td>
-            <td class="mono">Exterior radiators on the HP line</td>
-            <td>Passive; script only monitors and reports via a status light.</td>
+            <td class="mono">Medium Radiator (radiative, not Convection) on the HP line, exterior</td>
+            <td>Passive; script only monitors and reports via a status light. Convection type won't work out here — no atmosphere to convect into.</td>
           </tr>
           <tr>
             <td>CO2 separation</td>
@@ -526,6 +526,7 @@
       <li class="source-item">The <code>Temperature</code> IC10 logic type reads/writes in <strong>Kelvin</strong>, confirmed against known IC10 behavior — this is what exposed the old script's dead CO2-drain branch above.<span class="src">Known IC10 behavior, cross-checked during this session</span></li>
       <li class="source-item"><strong>"Compressor" is not a real Stationeers device</strong> — confirmed by Ryan directly after searches kept failing to turn up a device by that name. The correct device for forcibly moving gas between two pipe networks against a large pressure differential is the <strong>Turbo Volume Pump</strong> (moves gas up to 10× faster than a standard Volume Pump, adjustable 0–100L valve, ~200W base + 6W/L). Volume Pump/Turbo Volume Pump don't stop moving gas on their own regardless of downstream pressure — same reason our IC10 hysteresis gating on tank pressure is required, not optional.<span class="src">Confirmed directly by Ryan; Turbo Volume Pump specs via Stationeers Community Wiki</span></li>
       <li class="source-item"><strong>Electrolyzer autoignition risk.</strong> If the electrolyzer's output network (where H2 and O2 share a pipe before being split off) rises above 300°C (573K), the mix autoignites — converts the O2/H2 to steam and causes further electrolyzer output to autocombust too. This is why the electrolyzer isn't left unscripted like the old O2 Supply description implied: <code>atmospherics_electrolyzer.ic10</code> below trips a safety vent + shuts the unit off well before that threshold.<span class="src">Stationeers Community Wiki</span></li>
+      <li class="source-item"><strong>Radiator type matters for the Area 200 cooling stage.</strong> <strong>Medium Convection Radiator</strong> exchanges heat with the surrounding atmosphere through a grill — it has "no use in a vacuum." <strong>Medium Radiator</strong> (radiative, non-convection) radiates heat directly into space and works with no atmosphere present. Area 200's radiators sit exterior, dumping heat into Mars' thin atmosphere to condense CO2 — that's the radiative device, not the Convection one, which would do close to nothing out there.<span class="src">Stationeers Community Wiki (Medium Radiator) + stationeering.substack.com, Life Support III: Radiative Cooling</span></li>
     </ul>
     <p class="muted" style="margin-top:14px;">One source (a Substack "Thermal Conditioning &amp; Gas Separation" guide) surfaced oddly-named devices ("TEC-V", "PGL filtration") that don't match any known vanilla Stationeers device — likely a heavily-modded build or a bad fetch/summary. Its specific numbers (293–303K window, 13.79 kPa/K ratio, 48,636 kPa max) were <strong>not</strong> used anywhere in this design; treat that source as unreliable.</p>
   </section>
