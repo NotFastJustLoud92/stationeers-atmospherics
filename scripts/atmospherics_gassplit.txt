@@ -1,5 +1,5 @@
 alias n2Sensor_300      d0   # Pipe Analyzer on TK-302 (N2 tank)
-alias filtrationN2_300  d1   # Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream
+alias filtrationN2_300  d1   # Filtration unit, N2 filter - splits N2 out of the post-CV-301...303 gas stream
 alias o2Sensor_300      d2   # Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)
 alias filtrationO2_300  d3   # Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter
 alias n2ReliefValve_300 d4   # Digital Valve, TK-302 -> exterior, overpressure backstop

@@ -37,7 +37,7 @@ Open these directly in a browser (no server needed):
 
 - Every device is direct-wired to an IC housing pin — no `HASH()` batch-addressing anywhere, since a wrong guessed hash fails silently instead of erroring. When a loop needs more devices than one housing's 6 pins allow (Area 800's Recapture, at 7), it's split across two housings rather than reaching for a hash.
 - "Compressor" is not a real Stationeers device — the compression stage uses **Turbo Volume Pumps**.
-- The Condensation Valve that separates liquid CO2 out of the gas line is fully passive — no IC10 wiring needed for it. Area 400 uses a second one (CV-402) as a backup on the Purge Valve's output, to catch gas that re-condenses before the buffer tank — a documented failure mode of Purge Valves.
+- The Condensation Valve that separates liquid CO2 out of the gas line is fully passive — no IC10 wiring needed for it. Area 300 runs three in parallel (CV-301/302/303) for redundancy. Area 400 uses a separate one (CV-402) as a backup on the Purge Valve's output, to catch gas that re-condenses before the buffer tank — a documented failure mode of Purge Valves.
 - Area 200's exterior radiators must be the radiative **Medium Radiator**, not Medium **Convection** Radiator — Convection needs surrounding atmosphere to work and has no use in a vacuum.
 - The Mars-air raw buffer (Area 100) and the liquid CO2 tanks (Area 300) are **Insulated** variants — real, separate Stationeers structures built from insulated kits — so their contents don't gain/lose heat from the surrounding environment.
 - N2, O2, CO2, and N2O each get their own storage — nothing is blended in a shared tank. Area 800's Recapture loop only ever returns gas to a tank; Regulation's three pumps are the sole path back into the room.

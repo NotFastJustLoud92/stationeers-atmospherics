@@ -352,6 +352,7 @@
     <span class="chip ok"><span class="dot"></span>ICE CRUSHER GAS PRODUCTION + RELIEF VALVES ON EVERY TANK (2026-08-07)</span>
     <span class="chip ok"><span class="dot"></span>POLLUTANT/METHANE/HYDROGEN CAPTURED, NOT VENTED (2026-08-07)</span>
     <span class="chip ok"><span class="dot"></span>ALL ALIASES MADE GLOBALLY UNIQUE ACROSS THE SHARED NETWORK (2026-08-08)</span>
+    <span class="chip ok"><span class="dot"></span>CV-301 CONDENSATION VALVE NOW 3× IN PARALLEL (2026-08-08)</span>
   </div>
 
   <section class="panel">
@@ -494,6 +495,10 @@
       <li class="check-item">
         <span class="tag done">2026-08-08</span>
         <span class="body"><strong>Every alias in every script renamed to be globally unique, and every "Pipe Analyzer / Gas Sensor" ambiguous device comment resolved to one real device.</strong> Ryan's direction: all 10 IC housings sit on the same data network, so alias names only being unique within their own script isn't good enough — a name collision between two housings on the same network is a real risk once they're actually wired up together. Every alias across all 9 active scripts now carries an area-number suffix (<code>_100</code>, <code>_200</code>, <code>_300</code>, <code>_400</code>, <code>_500</code>, <code>_500b</code>, <code>_600</code>, <code>_800</code>, <code>_800r</code>) — verified duplicate-free across all 44 aliases. Also fixed: three device comments that said "Pipe Analyzer / Gas Sensor" as if a pin could be either — a pin is wired to one specific device, never both. Ryan caught this on <code>rawSensor</code> in <code>atmospherics_intake.ic10</code> first; the same ambiguity turned up on <code>tankSensor</code> (<code>atmospherics_compression.ic10</code>) and <code>co2Sensor</code> (<code>atmospherics_co2supply.ic10</code>) too. All three resolve to <strong>Pipe Analyzer</strong> — each one reads a pipe network's <code>Pressure</code>, not open-room atmosphere, which only a Gas Sensor does. The superseded <code>atmospherics_intake_compression.ic10</code> block below is left un-renamed on purpose — it's historical reference, not part of the live network.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-08</span>
+        <span class="body"><strong>CV-301 is now three Condensation Valves running in parallel (CV-301/302/303), not one.</strong> Ryan's call — added CV-302 and CV-303 alongside the existing CV-301 as redundancy, all three plumbed off the same gas line rather than chained in series (chaining, like CV-402's backup role in Area 400, is for catching what a previous stage missed; parallel is for staying online if one unit fails or gets removed). No script or pin changes — Condensation Valves are fully passive, same as before. BOM's Condensation Valve count goes from 2 to 4 (CV-301/302/303 in Area 300, plus CV-402 in Area 400).</span>
       </li>
     </ul>
 
@@ -784,7 +789,7 @@ j main</pre>
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_gassplit.ic10</span><span class="housing">Area 300 · N2/O2 split · 6 pins · added relief valves (2026-08-07)</span></div>
       <pre>alias n2Sensor_300      d0   <span class="c"># Pipe Analyzer on TK-302 (N2 tank)</span>
-alias filtrationN2_300  d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream</span>
+alias filtrationN2_300  d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301...303 gas stream</span>
 alias o2Sensor_300      d2   <span class="c"># Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)</span>
 alias filtrationO2_300  d3   <span class="c"># Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter</span>
 alias n2ReliefValve_300 d4   <span class="c"># Digital Valve, TK-302 -> exterior, overpressure backstop</span>

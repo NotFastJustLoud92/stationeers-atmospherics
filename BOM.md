@@ -24,7 +24,7 @@ Structures and items needed to build this system, grouped by Area (matches the [
 ## Area 300 — Phase Separation & Storage
 | Device | Qty | Notes |
 |---|---|---|
-| Condensation Valve | 1 | CV-301, passive liquid separator |
+| Condensation Valve | 3 | CV-301/302/303, passive liquid separators run in parallel off the same gas line — redundancy, not sequential stages |
 | Large Liquid Tank (Insulated) | 2 | holds byproduct liquid CO2 — insulated so it doesn't warm and re-vaporize before the Purge Valve in Area 400 draws it off |
 | Filtration | 2 | FIL-301 (N2 filter), FIL-302 (O2 filter) — splits the post-condensation gas instead of dumping N2+O2 into one shared tank |
 | Pipe Analyzer | 2 | `n2Sensor_300`, `o2Sensor_300` |
@@ -87,6 +87,6 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | IC Housing + Integrated Circuit (IC10) | 1 | for `hash_id.ic10` — standing tool for reading real `PrefabHash`es |
 
 ## Totals
-- **Structures (fixed quantities): 73** — 4 Large Powered Vent, 5 Turbo Volume Pump, 1 Volume Pump, 10 Pipe Analyzer, 2 Gas Sensor, 6 Digital Valve, 1 Liquid Digital Valve, 1 Indicator Light, 10 Filtration, 2 Ice Crusher, 2 Condensation Valve, 1 Purge Valve, 1 Large Tank (Insulated), 2 Large Liquid Tank (Insulated), 5 Tank, 10 IC Housing, 10 Integrated Circuit (IC10)
+- **Structures (fixed quantities): 75** — 4 Large Powered Vent, 5 Turbo Volume Pump, 1 Volume Pump, 10 Pipe Analyzer, 2 Gas Sensor, 6 Digital Valve, 1 Liquid Digital Valve, 1 Indicator Light, 10 Filtration, 2 Ice Crusher, 4 Condensation Valve, 1 Purge Valve, 1 Large Tank (Insulated), 2 Large Liquid Tank (Insulated), 5 Tank, 10 IC Housing, 10 Integrated Circuit (IC10)
 - **Structures (variable, sized to your build)**: Large Tank (Area 300 N2 bank, Area 500 O2 bank), Medium Radiator ×N (Area 200), plus pipe/cable as needed
 - **Consumables: 11 filter cartridges** across 10 Filtration units (2 in Area 300 — N2/O2 split; 3 in Area 500 — O2/N2/N2O; 5 in Area 800 — Recapture, one of which holds 2 cartridges)
