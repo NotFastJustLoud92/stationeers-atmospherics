@@ -1,11 +1,15 @@
-alias sensor  d0
-alias n2Pump  d1
-alias o2Pump  d2
-alias co2Pump d3
+alias sensor  d0   # Gas Sensor, shared room
+alias n2Pump  d1   # Turbo Volume Pump
+alias o2Pump  d2   # Turbo Volume Pump
+alias co2Pump d3   # Turbo Volume Pump
 
 # CO2 target raised from 5% to 20% - Ryan confirmed 20% CO2 is fine for humans in this
 # game, so it's now actively maintained at that level instead of the old, more
 # conservative 5%. N2 absorbed the difference (75 -> 60); O2 unchanged.
+#
+# Pumps upgraded from Volume Pump to Turbo Volume Pump (2026-08-07) for faster response
+# keeping up with the room's demand swings. No logic change - same On logic type as a
+# regular Volume Pump, only the device placed and wired changes.
 define N2_TARGET  60
 define N2_LOW     58
 define O2_TARGET  20

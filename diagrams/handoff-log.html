@@ -391,7 +391,7 @@
           </tr>
           <tr>
             <td><span class="swatch" style="background:#b08ee0"></span>Regulation <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 600</span></td>
-            <td class="mono">Gas Sensor + 3× Volume Pump</td>
+            <td class="mono">Gas Sensor + 3× Turbo Volume Pump</td>
             <td>Actively holds 60/20/20 N2/O2/CO2 in the shared output. The <strong>only</strong> thing that ever adds gas to the room (2026-08-07) — Recapture no longer returns anything to the room directly.</td>
           </tr>
           <tr>
@@ -463,6 +463,10 @@
       <li class="check-item">
         <span class="tag done">2026-08-07</span>
         <span class="body"><strong>Recapture (Area 800) now sorts N2 too, and nothing it captures goes back to the room directly.</strong> Ryan's direction: any gas Recapture pulls out of the room air should be filtered and returned to its own storage tank, and the <em>only</em> path back into the room atmosphere should be Regulation's three pumps. Added a fifth filter (N2, → Area 300's TK-302) and removed the old "scrubbed remainder → back to Area 700" bus entirely — O2/CO2/N2 each route to their tank, Pollutant/Volatiles vent to exterior, and there's nothing left over to return. This pushed the loop to 7 controlled devices (1 sensor + 1 pump + 5 filters), over one IC housing's 6-pin limit, so it's now split across <code>atmospherics_recapture.ic10</code> (the real decision logic: sensor, pump, CO2/Pollutant/Volatiles) and a new companion <code>atmospherics_recapture_riders.ic10</code> (3 pins, just mirrors the pump's On state onto the O2 and N2 filters — same "duplicate the housing" pattern used elsewhere in this build rather than reaching for HASH()-based batch addressing).</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Regulation's three pumps upgraded to Turbo Volume Pump.</strong> <code>n2Pump</code>/<code>o2Pump</code>/<code>co2Pump</code> were plain Volume Pumps; switched to Turbo Volume Pump for faster response to the room's demand swings, same pattern as Area 200's compression bank. No logic change — Turbo Volume Pump uses the same <code>On</code> logic type, only the device placed and wired changes.</span>
       </li>
     </ul>
 
@@ -810,15 +814,19 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_regulation.ic10</span><span class="housing">Area 600 · 4 pins · CO2 target raised 5% → 20% (2026-08-02)</span></div>
-      <pre>alias sensor  d0
-alias n2Pump  d1
-alias o2Pump  d2
-alias co2Pump d3
+      <div class="script-tab"><span class="name">atmospherics_regulation.ic10</span><span class="housing">Area 600 · 4 pins · Turbo Volume Pumps (2026-08-07)</span></div>
+      <pre>alias sensor  d0   <span class="c"># Gas Sensor, shared room</span>
+alias n2Pump  d1   <span class="c"># Turbo Volume Pump</span>
+alias o2Pump  d2   <span class="c"># Turbo Volume Pump</span>
+alias co2Pump d3   <span class="c"># Turbo Volume Pump</span>
 
 <span class="c"># CO2 target raised from 5% to 20% - Ryan confirmed 20% CO2 is fine for humans in this
 # game, so it's now actively maintained at that level instead of the old, more
-# conservative 5%. N2 absorbed the difference (75 -> 60); O2 unchanged.</span>
+# conservative 5%. N2 absorbed the difference (75 -> 60); O2 unchanged.
+#
+# Pumps upgraded from Volume Pump to Turbo Volume Pump (2026-08-07) for faster response
+# keeping up with the room's demand swings. No logic change - same On logic type as a
+# regular Volume Pump, only the device placed and wired changes.</span>
 define N2_TARGET  60
 define N2_LOW     58
 define O2_TARGET  20
