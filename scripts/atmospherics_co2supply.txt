@@ -1,5 +1,8 @@
-alias co2Sensor   d0   # Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)
-alias liquidPurge d1   # Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas
+alias co2Sensor      d0   # Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)
+alias liquidPurge    d1   # Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas
+alias liquidSensor   d2   # Pipe Analyzer on TK-301 (Area 300 Liquid Tank bank, liquid CO2)
+alias liquidRelief   d3   # Liquid Digital Valve, TK-301 liquid line -> exterior, overpressure backstop
+alias co2ReliefValve d4   # Digital Valve, CO2 buffer tank -> exterior, overpressure backstop
 
 # Regulation's co2Pump had no source anywhere in this build until now - it was pumping
 # against an empty supply. Reuses the liquid CO2 Area 300's Condensation Valve already
@@ -12,6 +15,17 @@ alias liquidPurge d1   # Purge Valve, drains the Area 300 Liquid Tank into the C
 # as the other supply-side buffers - tune once running.
 define CO2_TARGET 4000
 define CO2_LOW    3500
+
+# Relief backstops. Liquid pipes burst at only 6,080 kPa - 10% of a gas pipe - so TK-301's
+# relief sits with real margin under that, not the usual near-60,000 kPa ceiling used on
+# the gas-side tanks. TK-401's CO2 buffer relief also stays modest since its own operating
+# target is small; this is a backstop against liquidPurge sticking open, not a high-pressure
+# design ceiling. Both vent to exterior, not the room. liquidRelief is a Liquid Digital
+# Valve, not the regular gas-side Digital Valve used everywhere else in this build.
+define LIQUID_RELIEF_HIGH 4500
+define LIQUID_RELIEF_LOW  4000
+define CO2_RELIEF_HIGH    6000
+define CO2_RELIEF_LOW     5500
 
 s liquidPurge Setting 0
 
@@ -27,5 +41,24 @@ purge_off:
 slt r2 r0 CO2_LOW
 purge_set:
 s liquidPurge On r2
+
+l r3 liquidSensor Pressure
+l r4 liquidRelief On
+beqz r4 lrv_off
+sgt r5 r3 LIQUID_RELIEF_LOW
+j lrv_set
+lrv_off:
+sgt r5 r3 LIQUID_RELIEF_HIGH
+lrv_set:
+s liquidRelief On r5
+
+l r6 co2ReliefValve On
+beqz r6 crv_off
+sgt r7 r0 CO2_RELIEF_LOW
+j crv_set
+crv_off:
+sgt r7 r0 CO2_RELIEF_HIGH
+crv_set:
+s co2ReliefValve On r7
 
 j main

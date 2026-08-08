@@ -349,6 +349,7 @@
     <span class="chip issue"><span class="dot"></span>VENT OVERPRESSURE BUG — FIXED, UNTESTED IN-GAME</span>
     <span class="chip ok"><span class="dot"></span>P&amp;ID REV B — SIMPLIFIED, DEVICE LABELS CORRECTED (2026-08-04)</span>
     <span class="chip ok"><span class="dot"></span>N2/O2 SPLIT STORAGE + CLOSED-LOOP RECAPTURE (2026-08-07)</span>
+    <span class="chip ok"><span class="dot"></span>ICE CRUSHER GAS PRODUCTION + RELIEF VALVES ON EVERY TANK (2026-08-07)</span>
   </div>
 
   <section class="panel">
@@ -380,9 +381,9 @@
             <td>NEW (2026-08-07), Area 300 is now IC-controlled, not passive. Used to dump N2+O2 into one shared tank with two pumps drawing from the same mixed pipe — that doesn't actually separate anything. Now each gas gets its own hysteresis-gated buffer. See <code>atmospherics_gassplit.ic10</code> below.</td>
           </tr>
           <tr>
-            <td><span class="swatch" style="background:#e0a244"></span>O2 Supply <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 500</span></td>
-            <td class="mono">Electrolyzer (ice-fed) + O2 Tank bank</td>
-            <td>Now a shared buffer fed by three sources: the electrolyzer (ice-fed, unchanged manual haul), Area 300's collected O2, and Area 800's recaptured O2. IC-gated (2026-08-02) — see <code>atmospherics_electrolyzer.ic10</code> below.</td>
+            <td><span class="swatch" style="background:#e0a244"></span>Gas Production <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 500</span></td>
+            <td class="mono">2× Ice Crusher (Oxite, Nitrice) + Filtration + O2/N2/N2O tanks</td>
+            <td>Electrolyzer replaced (2026-08-07) — Ryan's call, crushed Oxite/Nitrice instead of ice-fed electrolysis. Oxite → O2/N2 (feeds the shared O2 network + Area 300's TK-302); Nitrice → N2O, its own low-pressure branch since N2O condenses far more easily than anything else piped here. See <code>atmospherics_icecrusher.ic10</code> and <code>atmospherics_n2osupply.ic10</code> below.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#5fc77e"></span>CO2 Supply <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 400</span></td>
@@ -468,6 +469,22 @@
         <span class="tag done">2026-08-07</span>
         <span class="body"><strong>Regulation's three pumps upgraded to Turbo Volume Pump.</strong> <code>n2Pump</code>/<code>o2Pump</code>/<code>co2Pump</code> were plain Volume Pumps; switched to Turbo Volume Pump for faster response to the room's demand swings, same pattern as Area 200's compression bank. No logic change — Turbo Volume Pump uses the same <code>On</code> logic type, only the device placed and wired changes.</span>
       </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Electrolyzer replaced with an Ice Crusher — crushed Oxite and Nitrice instead of ice-fed electrolysis.</strong> Ryan's call, after asking whether it made more sense than the Electrolyzer: an Ice Crusher fed Oxite outputs roughly 90% O2 / 10% N2 directly (real device fact, confirmed via wiki), which conveniently matches the same split Area 300 already does, and it skips the Electrolyzer's H2 byproduct and autoignition risk entirely — no safety-trip logic needed for this housing. <code>atmospherics_icecrusher.ic10</code> replaces <code>atmospherics_electrolyzer.ic10</code>; its O2 and N2 outputs feed the same shared tanks <code>atmospherics_gassplit.ic10</code> already established (TK-302 for N2, the shared O2 network for O2) rather than standing up a second tank pair.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Nitrice adds a third gas to this build — N2O — and it needs very different handling than everything else piped here.</strong> Ryan is also running Nitrice through a second Ice Crusher for N2O. N2O condenses far more easily than O2/N2/CO2: its in-game triple point sits around −21°C (confirmed directly from the Stationpedia phase graph, not just community sources), so the branch has to stay at LOW pressure and room temperature on purpose, opposite of the CO2 line's deliberate high-pressure/cold-radiator approach. New housing <code>atmospherics_n2osupply.ic10</code> (4 pins) keeps its buffer target at just 1,000/800 kPa — far below every other supply buffer in this build — and keeps the whole run indoors, away from any exterior/cold pipe segment.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Relief valves added to every tank in the build, not just the two that already had them.</strong> Ryan's direction directly: TK-101 (Area 100) and the HP line (Area 200) already had relief backstops; TK-302/the O2 network (Area 300), TK-301/TK-401 (Area 400), and the new N2O buffer (Area 500) didn't. All now vent to exterior on the same hysteresis pattern, trip well above their operating target with margin under the 60,000 kPa tank rating (except TK-301, which uses the much lower 6,080 kPa liquid pipe burst rating instead). TK-301's relief uses a <strong>Liquid Digital Valve</strong>, not the regular gas-side Digital Valve used everywhere else — confirmed as a real, separate device by Ryan directly after this was flagged as unverified.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Emergency buffer tank added to Area 800's room-air intake.</strong> Ryan added a passive tank on the "blue line" (the shared intake feeding both Recapture and the Ice Crusher branch) as a reserve of room air in case the base depressurizes for any reason. Purely passive, no IC10 pins — just physical volume sitting on the intake line.</span>
+      </li>
     </ul>
 
     <hr class="rule">
@@ -546,6 +563,9 @@
       <li class="source-item"><strong>Radiator type matters for the Area 200 cooling stage.</strong> <strong>Medium Convection Radiator</strong> exchanges heat with the surrounding atmosphere through a grill — it has "no use in a vacuum." <strong>Medium Radiator</strong> (radiative, non-convection) radiates heat directly into space and works with no atmosphere present. Area 200's radiators sit exterior, dumping heat into Mars' thin atmosphere to condense CO2 — that's the radiative device, not the Convection one, which would do close to nothing out there.<span class="src">Stationeers Community Wiki (Medium Radiator) + stationeering.substack.com, Life Support III: Radiative Cooling</span></li>
       <li class="source-item"><strong>Purge Valve recovers gas from a liquid tank on purpose</strong> — this is a documented, commonly-used pattern, not a workaround. Draining existing gas headspace from a liquid line drops local pressure, which pushes more of the liquid to evaporate to refill it; setting the Purge Valve's pressure limit toward 0 makes this aggressive. The known failure mode: evaporated gas can "leak through" the Purge Valve and re-condense on the gas side, so the standard fix is a Condensation Valve immediately after it (opposite direction from the main one) draining any re-condensed liquid back to the liquid line, to prevent pipe ruptures. This is what <code>atmospherics_co2supply.ic10</code> below now does with Area 300's liquid CO2 instead of tapping raw Mars air a second time.<span class="src">Stationeers Community Wiki (Purge Valve) + Steam Community discussions ("How to pump out gas from a liquid tank?")</span></li>
       <li class="source-item"><strong>Insulated tank variants are real, separate structures</strong> — <strong>Large Tank (Insulated)</strong> and <strong>Large Liquid Tank (Insulated)</strong> are built from insulated tank kits (<code>Kit (Tank Insulated)</code> / <code>ItemKitLiquidTankInsulated</code>) rather than the standard kits, same 50,000 L capacity and ~60,000 kPa burst as the non-insulated version. Insulation only affects heat transfer with the surrounding environment, not pressure rating — useful here for keeping the Mars-air raw buffer's pressure from swinging with exterior temperature, and for keeping the liquid CO2 tanks from warming enough to re-vaporize their contents before the Purge Valve can draw them off.<span class="src">Stationeers Community Wiki (Tank) + Steam Community discussions</span></li>
+      <li class="source-item"><strong>Ice Crusher processes Oxite and Nitrice into gas, not just liquid.</strong> It has two output ports — gas (top, yellow pipe) and liquid (bottom, blue pipe) — and its crush speed is controlled by a <code>Setting</code> parameter (Kelvin) writable via IC10, same as an On/Off logic type for gating. Oxite crushes into roughly <strong>90% O2 / 10% N2</strong> — not pure oxygen, has to be filtered same as everything else in this build.<span class="src">Stationeers Community Wiki (Ice Crusher, Ice (Oxite))</span></li>
+      <li class="source-item"><strong>N2O's in-game triple point is around −21°C</strong>, confirmed directly from the Stationpedia phase-change graph (not just community sources) — well warmer than CO2's 218K/−55°C. That means N2O's liquid region opens up at far lower pressure/higher temperature than anything else piped in this build; a pressure that would keep CO2 comfortably gaseous will condense N2O. The graph's exact curve shape (how much pressure headroom exists at a given temperature above the triple point) wasn't fully read off the screenshot — treat as directional until confirmed against a live Pipe Analyzer reading once the branch is built.<span class="src">In-game Stationpedia phase graph, screenshot-confirmed by Ryan</span></li>
+      <li class="source-item"><strong>Liquid Digital Valve is a real, separate device from the regular (gas-side) Digital Valve</strong> — confirmed directly by Ryan after this was flagged as an open question. Used for TK-301's relief valve since that tank sits on a liquid pipe network, not a gas one.<span class="src">Confirmed directly by Ryan</span></li>
     </ul>
     <p class="muted" style="margin-top:14px;">One source (a Substack "Thermal Conditioning &amp; Gas Separation" guide) surfaced oddly-named devices ("TEC-V", "PGL filtration") that don't match any known vanilla Stationeers device — likely a heavily-modded build or a bad fetch/summary. Its specific numbers (293–303K window, 13.79 kPa/K ratio, 48,636 kPa max) were <strong>not</strong> used anywhere in this design; treat that source as unreliable.</p>
   </section>
@@ -593,8 +613,20 @@
         <span class="body"><strong><code>CO2_TARGET</code>/<code>CO2_LOW</code> (4,000/3,500 kPa)</strong> in <code>atmospherics_co2supply.ic10</code> are placeholder buffer-size numbers, same as the other supply-side buffers in this build — not tuned to how fast Regulation's <code>co2Pump</code> actually draws it down. Also unverified: whether draining the Liquid Tank via <code>liquidPurge</code> keeps pace with demand, or drains the tank faster than Area 300 replenishes it — hasn't been tested with the whole loop running at once.</span>
       </li>
       <li class="check-item">
+        <span class="tag done">Resolved</span>
+        <span class="body"><strong>The Electrolyzer's autoignition trip (<code>TEMP_TRIP</code>/<code>TEMP_LOW</code>) is moot</strong> — <code>atmospherics_electrolyzer.ic10</code> is superseded by <code>atmospherics_icecrusher.ic10</code> (2026-08-07), which has no H2 byproduct and no autoignition risk. No longer an open item; kept below for history only.</span>
+      </li>
+      <li class="check-item">
         <span class="tag verify">Verify</span>
-        <span class="body"><strong><code>TEMP_TRIP</code> (523K/250°C) and <code>TEMP_LOW</code> (373K/100°C)</strong> in the new <code>atmospherics_electrolyzer.ic10</code> are a deliberately wide safety margin under the documented 300°C (573K) autoignition point, not a wiki-confirmed safe operating ceiling for this specific device. Confirm normal electrolyzer output temperature stays well clear of 250°C in practice — if it runs hotter than expected, the margin needs to be bigger, not smaller.</span>
+        <span class="body"><strong><code>N2O_TARGET</code>/<code>N2O_LOW</code> (1,000/800 kPa) and <code>N2O_RELIEF_HIGH</code>/<code>N2O_RELIEF_LOW</code> (1,500/1,300 kPa)</strong> in <code>atmospherics_n2osupply.ic10</code> are reasoned to stay well clear of N2O's condensation curve (triple point ≈ −21°C per the in-game phase graph), not a precisely calculated safe ceiling — the graph's exact curve shape at operating temperature wasn't fully read off the screenshot. Check the buffer's actual phase state once gas is flowing and lower these further if it's still condensing.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong>Whether a Liquid Digital Valve actually seats/gates correctly on TK-301's liquid pipe network</strong> hasn't been hands-on confirmed in this build — <code>atmospherics_co2supply.ic10</code>'s <code>liquidRelief</code> pin assumes it behaves like the regular Digital Valve does on gas lines. Confirm once wired up.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong>Relief valve thresholds added 2026-08-07</strong> (<code>N2_RELIEF_HIGH</code>/<code>O2_RELIEF_HIGH</code> at 50,000 kPa in <code>atmospherics_gassplit.ic10</code>; <code>LIQUID_RELIEF_HIGH</code> at 4,500 kPa and <code>CO2_RELIEF_HIGH</code> at 6,000 kPa in <code>atmospherics_co2supply.ic10</code>) are all reasoned placeholders with margin under their respective burst ratings, not hands-on tuned. None of these have tripped in-game yet since nothing has been run.</span>
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
@@ -618,7 +650,7 @@
   <section class="panel">
     <div class="panel-head">
       <h2>IC10 Scripts</h2>
-      <span class="panel-num">9 independent housings, 1 superseded</span>
+      <span class="panel-num">10 independent housings, 1 superseded</span>
     </div>
 
     <p class="muted">Saved as plain <code>.txt</code> files in <code>Desktop\Stationeers IC10 Scripts\</code>. A separate diagnostic script, <code>hash_id.ic10</code>, is also in that folder — wire any unknown device to it and read its real <code>PrefabHash</code> directly instead of guessing a <code>HASH("...")</code> string. Each housing below is tagged with its Area number, matching the companion <strong>P&amp;ID</strong> (Rev B, 2026-08-04) — cross-reference a device's tag there (e.g. <code>PA-201</code>) back to its pin here the same way.</p>
@@ -728,11 +760,13 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_gassplit.ic10</span><span class="housing">Area 300 · N2/O2 split · 4 pins · NEW (2026-08-07) — Area 300 is no longer passive</span></div>
-      <pre>alias n2Sensor     d0   <span class="c"># Pipe Analyzer on TK-302 (N2 tank)</span>
-alias filtrationN2 d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream</span>
-alias o2Sensor     d2   <span class="c"># Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)</span>
-alias filtrationO2 d3   <span class="c"># Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter</span>
+      <div class="script-tab"><span class="name">atmospherics_gassplit.ic10</span><span class="housing">Area 300 · N2/O2 split · 6 pins · added relief valves (2026-08-07)</span></div>
+      <pre>alias n2Sensor      d0   <span class="c"># Pipe Analyzer on TK-302 (N2 tank)</span>
+alias filtrationN2  d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream</span>
+alias o2Sensor      d2   <span class="c"># Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)</span>
+alias filtrationO2  d3   <span class="c"># Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter</span>
+alias n2ReliefValve d4   <span class="c"># Digital Valve, TK-302 -> exterior, overpressure backstop</span>
+alias o2ReliefValve d5   <span class="c"># Digital Valve, O2 network -> exterior, overpressure backstop</span>
 
 <span class="c"># Area 300 used to dump N2 and O2 into one shared tank and let Regulation's two
 # separate pumps both draw from that same mixed pipe - that doesn't actually separate
@@ -746,6 +780,14 @@ define N2_TARGET 40000
 define N2_LOW    38000
 define O2_TARGET 40000
 define O2_LOW    38000
+
+<span class="c"># Relief backstops, same pattern as every other tank in this build now - trip well
+# above the normal operating target but with real margin under the 60,000 kPa tank
+# burst rating. Vents to exterior, not the room.</span>
+define N2_RELIEF_HIGH 50000
+define N2_RELIEF_LOW  48000
+define O2_RELIEF_HIGH 50000
+define O2_RELIEF_LOW  48000
 
 main:
 yield
@@ -769,6 +811,24 @@ o2_off:
 slt r5 r3 O2_LOW
 o2_set:
 s filtrationO2 On r5
+
+l r6 n2ReliefValve On
+beqz r6 n2rv_off
+sgt r7 r0 N2_RELIEF_LOW
+j n2rv_set
+n2rv_off:
+sgt r7 r0 N2_RELIEF_HIGH
+n2rv_set:
+s n2ReliefValve On r7
+
+l r8 o2ReliefValve On
+beqz r8 o2rv_off
+sgt r9 r3 O2_RELIEF_LOW
+j o2rv_set
+o2rv_off:
+sgt r9 r3 O2_RELIEF_HIGH
+o2rv_set:
+s o2ReliefValve On r9
 
 j main</pre>
     </div>
@@ -963,61 +1023,126 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_electrolyzer.ic10</span><span class="housing">Area 500 · O2 Supply · 5 pins</span></div>
-      <pre>alias o2Sensor     d0   <span class="c"># Pipe Analyzer / Gas Sensor on the O2 output line to the O2 Tank bank (Pressure)</span>
-alias electrolyzer d1   <span class="c"># Electrolyzer unit (On/Off)</span>
-alias outputTemp   d2   <span class="c"># Pipe Analyzer on the electrolyzer's shared H2/O2 output network (Temperature, Kelvin)</span>
-alias safetyVent   d3   <span class="c"># Digital Valve, output network -> exterior dump (autoignition safety)</span>
-alias statusLight  d4   <span class="c"># On = temperature safety trip is active</span>
+      <div class="script-tab"><span class="name">atmospherics_icecrusher.ic10</span><span class="housing">Area 500 · Gas Production, Oxite branch · 5 pins · replaces atmospherics_electrolyzer.ic10 (2026-08-07)</span></div>
+      <pre>alias o2Sensor     d0   <span class="c"># Pipe Analyzer on the O2 output network (same network Area 300's FIL-302 also feeds)</span>
+alias filtrationO2 d1   <span class="c"># Filtration unit, O2 filter - splits O2 out of the Ice Crusher's gas output</span>
+alias n2Sensor     d2   <span class="c"># Pipe Analyzer on TK-302 (Area 300's N2 tank - same tank gassplit.ic10 feeds)</span>
+alias filtrationN2 d3   <span class="c"># Filtration unit, N2 filter - splits N2 out of what's left after the O2 filter</span>
+alias iceCrusher   d4   <span class="c"># Ice Crusher, Oxite-fed (manual ore feed, no automated hopper)</span>
 
-<span class="c"># Autoignition safety: the electrolyzer's output network autoignites above 300C (573K),
-# converting the O2/H2 mix to steam and causing further output to autocombust too - a real
-# explosion-equivalent failure mode, not a soft limit. Trip well below that with a wide
-# hysteresis band; better to trip early and stay tripped than chatter near the edge.</span>
-define TEMP_TRIP 523   <span class="c"># 250C</span>
-define TEMP_LOW  373   <span class="c"># 100C - resume only once well clear of the trip point</span>
-
-<span class="c"># O2 supply gating - stop producing once the O2 tank bank is topped up, resume once
-# depleted. Not a safety concern, just avoids wasting power/water once storage is full.
-# Placeholder values, same as the other supply-side buffers in this build - tune once running.</span>
-define O2_TARGET 4000
-define O2_LOW    3500
+<span class="c"># Replaces atmospherics_electrolyzer.ic10 - Ryan asked to swap the ice-fed Electrolyzer
+# for an Ice Crusher running Oxite instead. Oxite crushes into roughly 90% O2 / 10% N2
+# (real device fact, not a guess - Oxite is not pure oxygen, it has to be filtered same
+# as everything else in this build). No H2 byproduct and no autoignition risk either, so
+# this housing doesn't need the old safety-trip logic atmospherics_electrolyzer.ic10 had.
+#
+# O2 and N2 both feed the SAME shared tanks Area 300's atmospherics_gassplit.ic10 already
+# established - TK-302 for N2, the shared O2 network for O2 - rather than standing up a
+# second separate O2/N2 tank pair here. Both this housing and gassplit.ic10 read/write the
+# same physical tanks; whichever source still has headroom keeps filling, and the relief
+# valves already wired in gassplit.ic10 protect both tanks regardless of which housing is
+# currently feeding them, so this housing doesn't need its own relief valves.
+#
+# Placeholder buffer targets, same numbers as gassplit.ic10's targets since they're the
+# same tanks - keep these two scripts' TARGET/LOW values in sync if you tune one.</span>
+define O2_TARGET 40000
+define O2_LOW    38000
+define N2_TARGET 40000
+define N2_LOW    38000
 
 main:
 yield
 
-<span class="c"># Temperature safety trip, hysteresis on/off, wide band on purpose</span>
-l r0 outputTemp Temperature
-l r1 safetyVent On
-beqz r1 trip_off
-sge r2 r0 TEMP_LOW
-j trip_set
-trip_off:
-sge r2 r0 TEMP_TRIP
-trip_set:
-s safetyVent On r2
-s statusLight On r2
+l r0 o2Sensor Pressure
+l r1 filtrationO2 On
+beqz r1 o2_off
+slt r2 r0 O2_TARGET
+j o2_set
+o2_off:
+slt r2 r0 O2_LOW
+o2_set:
+s filtrationO2 On r2
 
-<span class="c"># O2 supply gating, hysteresis on/off - forced off entirely while tripped</span>
-l r3 o2Sensor Pressure
-l r4 electrolyzer On
-beqz r4 elec_off
-slt r5 r3 O2_TARGET
-j elec_set
-elec_off:
-slt r5 r3 O2_LOW
-elec_set:
-sub r6 1 r2
-mul r5 r5 r6
-s electrolyzer On r5
+l r3 n2Sensor Pressure
+l r4 filtrationN2 On
+beqz r4 n2_off
+slt r5 r3 N2_TARGET
+j n2_set
+n2_off:
+slt r5 r3 N2_LOW
+n2_set:
+s filtrationN2 On r5
+
+<span class="c"># Ice Crusher runs whenever either filter still needs feeding</span>
+max r6 r2 r5
+s iceCrusher On r6
 
 j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_co2supply.ic10</span><span class="housing">Area 400 · CO2 Supply · 2 pins · source changed to reused liquid CO2 (2026-08-04)</span></div>
-      <pre>alias co2Sensor   d0   <span class="c"># Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)</span>
-alias liquidPurge d1   <span class="c"># Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas</span>
+      <div class="script-tab"><span class="name">atmospherics_n2osupply.ic10</span><span class="housing">Area 500 · Gas Production, Nitrice branch · 4 pins · NEW (2026-08-07)</span></div>
+      <pre>alias n2oSensor      d0   <span class="c"># Pipe Analyzer on the N2O buffer tank (Pressure)</span>
+alias filtrationN2O  d1   <span class="c"># Filtration unit, N2O filter - pulls N2O out of the Ice Crusher's gas output</span>
+alias iceCrusher     d2   <span class="c"># Ice Crusher, Nitrice-fed</span>
+alias n2oReliefValve d3   <span class="c"># Digital Valve, N2O buffer -> exterior, overpressure backstop</span>
+
+<span class="c"># N2O condenses far more easily than anything else piped in this build - its triple
+# point sits around -21C (confirmed via the in-game Stationpedia phase graph), and the
+# liquid region opens up fast above that as pressure climbs. Unlike the CO2 line, which
+# is deliberately compressed and cooled to force it to condense, this branch has to stay
+# LOW pressure and near room temperature on purpose, or it liquefies in the pipe instead
+# of reaching the tank as usable gas. Keep this whole run (Ice Crusher, Filtration,
+# buffer tank) indoors at room temperature - don't route it past anything cold like the
+# exterior radiator run on the CO2 line.
+#
+# Buffer target kept well below every other supply-side buffer in this build on purpose
+# - this is a placeholder, not a verified safe ceiling. Watch the buffer's actual phase
+# state once gas is flowing (Stationpedia graph or a Pipe Analyzer reading) and lower
+# N2O_TARGET further if it's still condensing at this pressure.</span>
+define N2O_TARGET 1000
+define N2O_LOW    800
+
+<span class="c"># Relief backstop, same pattern as every other tank in this build - trips well above
+# the operating target, vents to exterior. Kept modest here on purpose: the point isn't
+# tank burst protection (nowhere near the 60,000 kPa tank rating), it's catching a
+# runaway condition before the buffer drifts further past the phase-safe zone above.</span>
+define N2O_RELIEF_HIGH 1500
+define N2O_RELIEF_LOW  1300
+
+main:
+yield
+
+l r0 n2oSensor Pressure
+l r1 iceCrusher On
+beqz r1 n2o_off
+slt r2 r0 N2O_TARGET
+j n2o_set
+n2o_off:
+slt r2 r0 N2O_LOW
+n2o_set:
+s iceCrusher On r2
+s filtrationN2O On r2
+
+l r3 n2oReliefValve On
+beqz r3 nrv_off
+sgt r4 r0 N2O_RELIEF_LOW
+j nrv_set
+nrv_off:
+sgt r4 r0 N2O_RELIEF_HIGH
+nrv_set:
+s n2oReliefValve On r4
+
+j main</pre>
+    </div>
+
+    <div class="script">
+      <div class="script-tab"><span class="name">atmospherics_co2supply.ic10</span><span class="housing">Area 400 · CO2 Supply · 5 pins · added TK-301/TK-401 relief valves (2026-08-07)</span></div>
+      <pre>alias co2Sensor      d0   <span class="c"># Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)</span>
+alias liquidPurge    d1   <span class="c"># Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas</span>
+alias liquidSensor   d2   <span class="c"># Pipe Analyzer on TK-301 (Area 300 Liquid Tank bank, liquid CO2)</span>
+alias liquidRelief   d3   <span class="c"># Liquid Digital Valve, TK-301 liquid line -> exterior, overpressure backstop</span>
+alias co2ReliefValve d4   <span class="c"># Digital Valve, CO2 buffer tank -> exterior, overpressure backstop</span>
 
 <span class="c"># Regulation's co2Pump had no source anywhere in this build until now - it was pumping
 # against an empty supply. Reuses the liquid CO2 Area 300's Condensation Valve already
@@ -1030,6 +1155,18 @@ alias liquidPurge d1   <span class="c"># Purge Valve, drains the Area 300 Liquid
 # as the other supply-side buffers - tune once running.</span>
 define CO2_TARGET 4000
 define CO2_LOW    3500
+
+<span class="c"># Relief backstops. Liquid pipes burst at only 6,080 kPa - 10% of a gas pipe - so
+# TK-301's relief sits with real margin under that, not the usual near-60,000 kPa
+# ceiling used on the gas-side tanks. TK-401's CO2 buffer relief also stays modest since
+# its own operating target is small; this is a backstop against liquidPurge sticking
+# open, not a high-pressure design ceiling. Both vent to exterior, not the room.
+# liquidRelief is a Liquid Digital Valve, not the regular gas-side Digital Valve used
+# everywhere else in this build.</span>
+define LIQUID_RELIEF_HIGH 4500
+define LIQUID_RELIEF_LOW  4000
+define CO2_RELIEF_HIGH    6000
+define CO2_RELIEF_LOW     5500
 
 s liquidPurge Setting 0
 
@@ -1046,6 +1183,25 @@ slt r2 r0 CO2_LOW
 purge_set:
 s liquidPurge On r2
 
+l r3 liquidSensor Pressure
+l r4 liquidRelief On
+beqz r4 lrv_off
+sgt r5 r3 LIQUID_RELIEF_LOW
+j lrv_set
+lrv_off:
+sgt r5 r3 LIQUID_RELIEF_HIGH
+lrv_set:
+s liquidRelief On r5
+
+l r6 co2ReliefValve On
+beqz r6 crv_off
+sgt r7 r0 CO2_RELIEF_LOW
+j crv_set
+crv_off:
+sgt r7 r0 CO2_RELIEF_HIGH
+crv_set:
+s co2ReliefValve On r7
+
 j main</pre>
     </div>
   </section>
@@ -1055,7 +1211,7 @@ j main</pre>
       <h2>Resume here</h2>
       <span class="panel-num">next session</span>
     </div>
-    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive) — an N2 filter then an O2 filter, each into its own tank/network, instead of one combined bank. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Wire the electrolyzer to <code>atmospherics_electrolyzer.ic10</code> too, not left bare — its output network can autoignite above 300°C if H2/O2 build up together. Wire <code>atmospherics_co2supply.ic10</code> to the Liquid Tanks in Area 300 (Purge Valve, not a raw-air tap) — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is now <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (sensor, pump, CO2/Pollutant/Volatiles) plus a new companion <code>atmospherics_recapture_riders.ic10</code> (O2/N2, mirrors the main housing's pump state) — since the loop grew to 7 devices once N2 recovery was added and nothing returns to the room directly anymore; wire both. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and Area 500's O2 tank bank into the shared-room Regulation stage (60/20/20 N2/O2/CO2). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, the electrolyzer's <code>TEMP_TRIP</code> margin, the new <code>atmospherics_gassplit.ic10</code> buffer targets, whether the rider housing actually tracks the main housing's pump state, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
+    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive, 6 pins including two relief valves) — an N2 filter then an O2 filter, each into its own tank/network. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Area 500 is now <strong>gas production</strong>, not just O2 supply: the Electrolyzer is gone, replaced by two Ice Crushers — <code>atmospherics_icecrusher.ic10</code> (Oxite → O2/N2, feeding the same shared tanks Area 300 uses) and <code>atmospherics_n2osupply.ic10</code> (Nitrice → N2O, its own low-pressure/room-temperature branch since N2O condenses far more easily than anything else here — triple point ≈ −21°C, confirmed from the in-game phase graph). Wire <code>atmospherics_co2supply.ic10</code> (now 5 pins, added TK-301 and TK-401 relief valves) to the Liquid Tanks in Area 300 — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (sensor, pump, CO2/Pollutant/Volatiles) plus companion <code>atmospherics_recapture_riders.ic10</code> (O2/N2) — plus a passive emergency buffer tank on its room-air intake for depressurization events. Every tank in the build now has its own relief valve venting to exterior, not just the two that started with one. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and the shared O2 network into the shared-room Regulation stage (60/20/20 N2/O2/CO2, three Turbo Volume Pumps). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, every relief valve's trip threshold, the N2O buffer's actual phase behavior, whether a Liquid Digital Valve gates TK-301 correctly, whether the rider housing actually tracks the main housing's pump state, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
   </section>
 
   <footer>

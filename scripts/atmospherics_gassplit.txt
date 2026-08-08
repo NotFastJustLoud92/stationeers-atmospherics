@@ -1,7 +1,9 @@
-alias n2Sensor     d0   # Pipe Analyzer on TK-302 (N2 tank)
-alias filtrationN2 d1   # Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream
-alias o2Sensor     d2   # Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)
-alias filtrationO2 d3   # Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter
+alias n2Sensor      d0   # Pipe Analyzer on TK-302 (N2 tank)
+alias filtrationN2  d1   # Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream
+alias o2Sensor      d2   # Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)
+alias filtrationO2  d3   # Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter
+alias n2ReliefValve d4   # Digital Valve, TK-302 -> exterior, overpressure backstop
+alias o2ReliefValve d5   # Digital Valve, O2 network -> exterior, overpressure backstop
 
 # Area 300 used to dump N2 and O2 into one shared tank and let Regulation's two separate
 # pumps both draw from that same mixed pipe - that doesn't actually separate anything, a
@@ -14,6 +16,14 @@ define N2_TARGET 40000
 define N2_LOW    38000
 define O2_TARGET 40000
 define O2_LOW    38000
+
+# Relief backstops, same pattern as every other tank in this build now - trip well above
+# the normal operating target but with real margin under the 60,000 kPa tank burst rating.
+# Vents to exterior, not the room.
+define N2_RELIEF_HIGH 50000
+define N2_RELIEF_LOW  48000
+define O2_RELIEF_HIGH 50000
+define O2_RELIEF_LOW  48000
 
 main:
 yield
@@ -37,5 +47,23 @@ o2_off:
 slt r5 r3 O2_LOW
 o2_set:
 s filtrationO2 On r5
+
+l r6 n2ReliefValve On
+beqz r6 n2rv_off
+sgt r7 r0 N2_RELIEF_LOW
+j n2rv_set
+n2rv_off:
+sgt r7 r0 N2_RELIEF_HIGH
+n2rv_set:
+s n2ReliefValve On r7
+
+l r8 o2ReliefValve On
+beqz r8 o2rv_off
+sgt r9 r3 O2_RELIEF_LOW
+j o2rv_set
+o2rv_off:
+sgt r9 r3 O2_RELIEF_HIGH
+o2rv_set:
+s o2ReliefValve On r9
 
 j main

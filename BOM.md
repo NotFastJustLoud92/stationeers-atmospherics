@@ -28,6 +28,7 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | Large Liquid Tank (Insulated) | 2 | holds byproduct liquid CO2 — insulated so it doesn't warm and re-vaporize before the Purge Valve in Area 400 draws it off |
 | Filtration | 2 | FIL-301 (N2 filter), FIL-302 (O2 filter) — splits the post-condensation gas instead of dumping N2+O2 into one shared tank |
 | Pipe Analyzer | 2 | `n2Sensor`, `o2Sensor` |
+| Digital Valve | 2 | XV-302 (N2 tank relief), XV-303 (O2 network relief) — overpressure backstops, vent to exterior |
 | Large Tank | your call | N2 tank — diagram shows 3 as representative, size to your needs. O2 output is piped to Area 500's tank bank instead of a separate local tank |
 | IC Housing + Integrated Circuit (IC10) | 1 | runs `atmospherics_gassplit.ic10` — Area 300 is no longer passive |
 
@@ -36,19 +37,22 @@ Structures and items needed to build this system, grouped by Area (matches the [
 |---|---|---|
 | Purge Valve | 1 | `liquidPurge` — drains Area 300's Liquid Tank, reuses CO2 already condensed there instead of re-filtering raw Mars air |
 | Condensation Valve | 1 | CV-402, backup — catches gas that re-condenses before the buffer tank, passive, no pin needed |
-| Tank | 1 | CO2 buffer |
-| Pipe Analyzer | 1 | `co2Sensor` |
+| Tank | 1 | CO2 buffer (TK-401) |
+| Pipe Analyzer | 2 | `co2Sensor`, `liquidSensor` (PA-402, reads TK-301 in Area 300) |
+| Liquid Digital Valve | 1 | XV-403, TK-301 relief — liquid pipes burst at only 6,080 kPa, 10% of a gas pipe, so this trips well under that |
+| Digital Valve | 1 | XV-404, CO2 buffer (TK-401) relief |
 | IC Housing + Integrated Circuit (IC10) | 1 | runs `atmospherics_co2supply.ic10` |
 
-## Area 500 — O2 Supply
+## Area 500 — Gas Production
 | Device | Qty | Notes |
 |---|---|---|
-| Electrolyzer | 1 | ice-fed, manual haul — unchanged |
-| Pipe Analyzer | 2 | `outputTemp`, `o2Sensor` |
-| Digital Valve | 1 | `safetyVent` — autoignition safety |
-| Indicator Light | 1 | `statusLight` |
-| Large Tank | 2+ | O2 storage bank — now the shared destination for 3 sources: the electrolyzer, Area 300's collected O2, and Area 800's recaptured O2 |
-| IC Housing + Integrated Circuit (IC10) | 1 | runs `atmospherics_electrolyzer.ic10` |
+| Ice Crusher | 2 | ICR-501 (Oxite-fed, manual haul), ICR-502 (Nitrice-fed, manual haul) — replaces the Electrolyzer (2026-08-07) |
+| Filtration | 3 | FIL-501 (O2 filter), FIL-502 (N2 filter), FIL-503 (N2O filter) |
+| Pipe Analyzer | 3 | `o2Sensor` (PA-502), `n2Sensor` (PA-503), `n2oSensor` (PA-504) |
+| Digital Valve | 1 | XV-502, N2O buffer relief — kept modest (1,500 kPa) since the real risk is condensation, not tank burst |
+| Tank | 1 | TK-502, N2O buffer — keep indoors at room temperature, low pressure; N2O condenses far more easily than anything else in this build |
+| Large Tank | 2+ | TK-501, O2 storage bank — shared destination for 3 sources: Oxite-fed ICR-501, Area 300's collected O2, and Area 800's recaptured O2 |
+| IC Housing + Integrated Circuit (IC10) | 2 | `atmospherics_icecrusher.ic10` (Oxite branch: O2 + N2) and `atmospherics_n2osupply.ic10` (Nitrice branch: N2O) |
 
 ## Area 600 — Regulation
 | Device | Qty | Notes |
@@ -62,14 +66,16 @@ Structures and items needed to build this system, grouped by Area (matches the [
 |---|---|---|
 | Gas Sensor | 1 | `sensor` |
 | Volume Pump | 1 | `recyclePump` |
+| Tank | 1 | TK-801, emergency buffer — passive, no IC10 pin, reserve room air in case the base depressurizes |
 | Filtration | 5 | FIL-801 (O2), FIL-802 (CO2), FIL-803 (N2), FIL-804 (Pollutant), FIL-805 (Volatiles) — one cartridge each, no more shared units |
 | IC Housing + Integrated Circuit (IC10) | 2 | main housing runs `atmospherics_recapture.ic10`; companion runs `atmospherics_recapture_riders.ic10` — one housing only has 6 pins and this loop needs 7 devices |
 
 ## Filter cartridges (consumable items, not structures)
 | Filter | Total | Goes into |
 |---|---|---|
-| N2 filter | 2 | FIL-301 (Area 300), FIL-803 (Area 800) |
-| O2 filter | 2 | FIL-302 (Area 300), FIL-801 (Area 800) |
+| N2 filter | 3 | FIL-301 (Area 300), FIL-502 (Area 500), FIL-803 (Area 800) |
+| O2 filter | 3 | FIL-302 (Area 300), FIL-501 (Area 500), FIL-801 (Area 800) |
+| N2O filter | 1 | FIL-503 (Area 500) |
 | CO2 filter | 1 | FIL-802 (Area 800) |
 | Pollutant filter | 1 | FIL-804 (Area 800) |
 | Volatiles filter | 1 | FIL-805 (Area 800) |
@@ -80,6 +86,6 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | IC Housing + Integrated Circuit (IC10) | 1 | for `hash_id.ic10` — standing tool for reading real `PrefabHash`es |
 
 ## Totals
-- **Structures (fixed quantities): 58** — 4 Large Powered Vent, 5 Turbo Volume Pump, 1 Volume Pump, 8 Pipe Analyzer, 2 Gas Sensor, 3 Digital Valve, 2 Indicator Light, 7 Filtration, 1 Electrolyzer, 2 Condensation Valve, 1 Purge Valve, 1 Large Tank (Insulated), 2 Large Liquid Tank (Insulated), 1 Tank, 9 IC Housing, 9 Integrated Circuit (IC10)
+- **Structures (fixed quantities): 71** — 4 Large Powered Vent, 5 Turbo Volume Pump, 1 Volume Pump, 10 Pipe Analyzer, 2 Gas Sensor, 6 Digital Valve, 1 Liquid Digital Valve, 1 Indicator Light, 10 Filtration, 2 Ice Crusher, 2 Condensation Valve, 1 Purge Valve, 1 Large Tank (Insulated), 2 Large Liquid Tank (Insulated), 3 Tank, 10 IC Housing, 10 Integrated Circuit (IC10)
 - **Structures (variable, sized to your build)**: Large Tank (Area 300 N2 bank, Area 500 O2 bank), Medium Radiator ×N (Area 200), plus pipe/cable as needed
-- **Consumables: 7 filter cartridges** across 7 Filtration units (2 in Area 300 — N2/O2 split; 5 in Area 800 — Recapture)
+- **Consumables: 10 filter cartridges** across 10 Filtration units (2 in Area 300 — N2/O2 split; 3 in Area 500 — O2/N2/N2O; 5 in Area 800 — Recapture)

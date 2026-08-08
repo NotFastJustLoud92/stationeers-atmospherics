@@ -1,0 +1,54 @@
+alias o2Sensor     d0   # Pipe Analyzer on the O2 output network (same network Area 300's FIL-302 also feeds)
+alias filtrationO2 d1   # Filtration unit, O2 filter - splits O2 out of the Ice Crusher's gas output
+alias n2Sensor     d2   # Pipe Analyzer on TK-302 (Area 300's N2 tank - same tank gassplit.ic10 feeds)
+alias filtrationN2 d3   # Filtration unit, N2 filter - splits N2 out of what's left after the O2 filter
+alias iceCrusher   d4   # Ice Crusher, Oxite-fed (manual ore feed, no automated hopper)
+
+# Replaces atmospherics_electrolyzer.ic10 - Ryan asked to swap the ice-fed Electrolyzer for
+# an Ice Crusher running Oxite instead. Oxite crushes into roughly 90% O2 / 10% N2 (real
+# device fact, not a guess - Oxite is not pure oxygen, it has to be filtered same as
+# everything else in this build). No H2 byproduct and no autoignition risk either, so this
+# housing doesn't need the old safety-trip logic atmospherics_electrolyzer.ic10 had.
+#
+# O2 and N2 both feed the SAME shared tanks Area 300's atmospherics_gassplit.ic10 already
+# established - TK-302 for N2, the shared O2 network for O2 - rather than standing up a
+# second separate O2/N2 tank pair here. Both this housing and gassplit.ic10 read/write the
+# same physical tanks; whichever source still has headroom keeps filling, and the relief
+# valves already wired in gassplit.ic10 protect both tanks regardless of which housing is
+# currently feeding them, so this housing doesn't need its own relief valves.
+#
+# Placeholder buffer targets, same numbers as gassplit.ic10's targets since they're the
+# same tanks - keep these two scripts' TARGET/LOW values in sync if you tune one.
+define O2_TARGET 40000
+define O2_LOW    38000
+define N2_TARGET 40000
+define N2_LOW    38000
+
+main:
+yield
+
+l r0 o2Sensor Pressure
+l r1 filtrationO2 On
+beqz r1 o2_off
+slt r2 r0 O2_TARGET
+j o2_set
+o2_off:
+slt r2 r0 O2_LOW
+o2_set:
+s filtrationO2 On r2
+
+l r3 n2Sensor Pressure
+l r4 filtrationN2 On
+beqz r4 n2_off
+slt r5 r3 N2_TARGET
+j n2_set
+n2_off:
+slt r5 r3 N2_LOW
+n2_set:
+s filtrationN2 On r5
+
+# Ice Crusher runs whenever either filter still needs feeding
+max r6 r2 r5
+s iceCrusher On r6
+
+j main
