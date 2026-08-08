@@ -11,6 +11,10 @@ Open these directly in a browser (no server needed):
 - [`diagrams/pid.html`](diagrams/pid.html) — full Process & Instrumentation Diagram. Eight numbered process areas, every device tagged, each IC10 housing drawn with its field-device wiring.
 - [`diagrams/handoff-log.html`](diagrams/handoff-log.html) — engineering log: room target, design decisions, researched facts (with sources), open items, and the full IC10 script listing.
 
+## Bill of materials
+
+[`BOM.md`](BOM.md) — every structure and item needed, by Area, with quantities and a running total.
+
 ## Scripts
 
 [`scripts/`](scripts) — the actual `.txt` IC10 files, same as what's loaded on the build machine at `Desktop\Stationeers IC10 Scripts\`. Import directly into an IC Housing in-game.
@@ -22,7 +26,7 @@ Open these directly in a browser (no server needed):
 | `atmospherics_co2supply.ic10` | Area 400 — taps raw Mars air for a CO2 gas buffer (Regulation has nowhere else to draw CO2 from) |
 | `atmospherics_electrolyzer.ic10` | Area 500 — O2 supply + autoignition safety trip (H2/O2 mix ignites above 300°C) |
 | `atmospherics_regulation.ic10` | Area 600 — holds the room at 60% N2 / 20% O2 / 20% CO2 @ 100 kPa |
-| `atmospherics_recapture.ic10` | Area 800 — skims excess CO2 back out once it climbs above 20% |
+| `atmospherics_recapture.ic10` | Area 800 — skims excess CO2 above 20%, plus Pollutant/Volatiles on any presence |
 | `atmospherics_intake_compression.ic10` | Superseded — kept for history, has a dead CO2-drain branch (Celsius/Kelvin bug) |
 | `hash_id.ic10` | Diagnostic — wire any unknown device to it to read its real `PrefabHash` instead of guessing |
 
@@ -31,4 +35,5 @@ Open these directly in a browser (no server needed):
 - Every device is direct-wired to an IC housing pin — no `HASH()` batch-addressing anywhere, since a wrong guessed hash fails silently instead of erroring.
 - "Compressor" is not a real Stationeers device — the compression stage uses **Turbo Volume Pumps**.
 - The Condensation Valve that separates liquid CO2 out of the gas line is fully passive — no IC10 wiring needed for it.
+- Area 200's exterior radiators must be the radiative **Medium Radiator**, not Medium **Convection** Radiator — Convection needs surrounding atmosphere to work and has no use in a vacuum.
 - Full reasoning, sourcing, and the list of what's still unverified is in the handoff log.
