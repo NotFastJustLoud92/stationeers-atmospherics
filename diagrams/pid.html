@@ -31,6 +31,30 @@
       --paper-panel: #151c24;
     }
   }
+  :root[data-theme="dark"]{
+    --paper: #10161d;
+    --paper-line: #202b36;
+    --ink: #dbe6ec;
+    --ink-2: #9fb0ba;
+    --ink-3: #5c6b75;
+    --boundary: #74b8e0;
+    --boundary-soft: rgba(116,184,224,0.08);
+    --alarm: #e8836a;
+    --alarm-soft: rgba(232,131,106,0.1);
+    --paper-panel: #151c24;
+  }
+  :root[data-theme="light"]{
+    --paper: #f2ede0;
+    --paper-line: #ddd4bb;
+    --ink: #22303b;
+    --ink-2: #52616c;
+    --ink-3: #8b98a1;
+    --boundary: #2f6690;
+    --boundary-soft: rgba(47,102,144,0.08);
+    --alarm: #a8452c;
+    --alarm-soft: rgba(168,69,44,0.09);
+    --paper-panel: #ffffff;
+  }
 
   *{ box-sizing: border-box; }
   html,body{ margin:0; padding:0; }
@@ -107,7 +131,7 @@
   <div class="page-head">
     <div class="kicker">Cragspire Station · Mars2 / Hellas Crags</div>
     <h1>Atmospherics System — Process &amp; Instrumentation Diagram</h1>
-    <p>Full process flow for the redesigned collection, liquefaction, supply, and regulation system, sectioned by IC10 housing per control loop. Companion to the "Atmospherics Room — Handoff Log" (<code>handoff-log.html</code>) and the scripts in <code>../scripts/</code>. Schematic only, not to scale — status: designed, not yet commissioned in-game.</p>
+    <p>Full process flow for the redesigned collection, liquefaction, supply, and regulation system, sectioned by IC10 housing per control loop. Companion to the "Atmospherics Room — Handoff Log" artifact and the scripts in <span class="mono">Desktop\Stationeers IC10 Scripts\</span>. Schematic only, not to scale — status: designed, not yet commissioned in-game.</p>
   </div>
 
   <div class="drawing-scroll">
@@ -319,46 +343,61 @@
         <text x="1310" y="502" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">liquid return</text>
 
         <!-- ================= AREA 400 — CO2 SUPPLY ================= -->
-        <rect x="200" y="620" width="410" height="300" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
+        <rect x="200" y="620" width="430" height="360" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
         <text x="216" y="648" font-size="14" font-weight="600" fill="var(--boundary)">AREA 400 — CO2 SUPPLY</text>
         <text x="216" y="666" font-size="11.5" class="mono" fill="var(--boundary)">[atmospherics_co2supply.ic10]</text>
         <text x="216" y="683" font-size="9.5" fill="var(--ink-2)">reuses liquid CO2 from Area 300, not a second Mars-air tap</text>
 
-        <use href="#sym-opc" x="235" y="760"/>
-        <text x="235" y="764" font-size="8.5" text-anchor="middle" class="mono">←300</text>
-        <text x="230" y="732" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">liquid CO2 in, off TK-301</text>
+        <!-- Row A: liquid CO2 in -> Purge Valve -> backup Condensation Valve -->
+        <use href="#sym-opc" x="230" y="745"/>
+        <text x="230" y="749" font-size="8.5" text-anchor="middle" class="mono">←300</text>
+        <text x="230" y="714" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">liquid CO2 in</text>
 
-        <line x1="257" y1="760" x2="298" y2="760" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
-        <use href="#sym-sep" x="325" y="760"/>
-        <text x="325" y="726" font-size="10.5" text-anchor="middle" class="mono">PRG-401 (d1)</text>
-        <text x="325" y="792" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">liquidPurge · Purge Valve, Setting=0</text>
+        <line x1="261" y1="745" x2="294" y2="745" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <use href="#sym-sep" x="340" y="745"/>
+        <text x="340" y="708" font-size="10.5" text-anchor="middle" class="mono">PRG-401 (d1)</text>
+        <text x="340" y="779" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">liquidPurge, Setting=0</text>
 
-        <line x1="371" y1="760" x2="396" y2="760" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
-        <g transform="translate(440,760) scale(0.75)"><use href="#sym-sep"/></g>
-        <text x="440" y="794" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">CV-402 · backup Condensation Valve</text>
-        <text x="440" y="807" font-size="9" text-anchor="middle" fill="var(--ink-2)">catches gas re-condensing before the tank</text>
+        <line x1="386" y1="745" x2="450" y2="745" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <g transform="translate(485,745) scale(0.75)"><use href="#sym-sep"/></g>
+        <text x="485" y="708" font-size="10.5" text-anchor="middle" class="mono">CV-402</text>
+        <text x="485" y="779" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">backup Condensation Valve</text>
 
-        <line x1="440" y1="772" x2="440" y2="845" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
-        <line x1="440" y1="845" x2="270" y2="845" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
-        <text x="355" y="841" font-size="9" text-anchor="middle" fill="var(--ink-2)">return liquid to Area 300</text>
-        <use href="#sym-opc" x="245" y="845"/>
-        <text x="245" y="849" font-size="8.5" text-anchor="middle" class="mono">→300</text>
+        <!-- gas continues right, drops into Row B -->
+        <line x1="519.5" y1="745" x2="590" y2="745" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="590" y1="745" x2="590" y2="845" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="590" y1="845" x2="318" y2="845" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
 
-        <line x1="474" y1="760" x2="518" y2="760" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
-        <use href="#sym-tank" x="555" y="760"/>
-        <text x="555" y="764" font-size="10" text-anchor="middle" class="mono">TK-401</text>
-        <text x="555" y="726" font-size="10" text-anchor="middle" fill="var(--ink-2)">CO2 buffer</text>
-        <use href="#sym-instr" x="555" y="820"/>
-        <text x="555" y="824" font-size="9.5" text-anchor="middle">PA</text>
-        <text x="555" y="852" font-size="10.5" text-anchor="middle" class="mono">PA-401 (d0)</text>
-        <text x="555" y="865" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">co2Sensor · Pipe Analyzer</text>
+        <!-- re-condensed liquid drains back to Area 300 (dashed, off to the right, down to Row C) -->
+        <line x1="485" y1="757" x2="485" y2="770" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5"/>
+        <line x1="485" y1="770" x2="605" y2="770" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5"/>
+        <line x1="605" y1="770" x2="605" y2="926" stroke="currentColor" stroke-width="2" stroke-dasharray="10 5" marker-end="url(#arrow)"/>
 
-        <use href="#sym-opc" x="620" y="760"/>
-        <text x="620" y="764" font-size="9.5" text-anchor="middle" class="mono">→600</text>
-        <text x="620" y="788" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">CO2 supply</text>
-        <text x="360" y="895" font-size="9.5" text-anchor="start" fill="var(--ink-2)">← FIL-801 recovered CO2 (Area 800)</text>
-        <use href="#sym-opc" x="330" y="895"/>
-        <text x="330" y="899" font-size="9" text-anchor="middle" class="mono">←800</text>
+        <!-- Row B: CO2 buffer tank, sensor, output to Regulation -->
+        <use href="#sym-tank" x="280" y="860"/>
+        <text x="280" y="864" font-size="10" text-anchor="middle" class="mono">TK-401</text>
+        <text x="280" y="826" font-size="10" text-anchor="middle" fill="var(--ink-2)">CO2 buffer</text>
+
+        <line x1="318" y1="860" x2="415" y2="860" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-instr" x="430" y="860"/>
+        <text x="430" y="864" font-size="9.5" text-anchor="middle">PA</text>
+        <text x="430" y="898" font-size="10.5" text-anchor="middle" class="mono">PA-401 (d0)</text>
+        <text x="430" y="911" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">co2Sensor · Pipe Analyzer</text>
+
+        <line x1="445" y1="860" x2="529" y2="860" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrow)"/>
+        <use href="#sym-opc" x="560" y="860"/>
+        <text x="560" y="864" font-size="9.5" text-anchor="middle" class="mono">→600</text>
+        <text x="560" y="894" font-size="9.5" text-anchor="middle" fill="var(--ink-2)">CO2 supply</text>
+
+        <!-- Row C: recovered CO2 in from Area 800, liquid return out to Area 300 -->
+        <line x1="280" y1="926" x2="280" y2="882" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrow)"/>
+        <use href="#sym-opc" x="280" y="940"/>
+        <text x="280" y="944" font-size="8.5" text-anchor="middle" class="mono">←800</text>
+        <text x="320" y="940" font-size="9.5" text-anchor="start" fill="var(--ink-2)">recovered CO2 (800)</text>
+
+        <use href="#sym-opc" x="605" y="940"/>
+        <text x="605" y="944" font-size="8.5" text-anchor="middle" class="mono">→300</text>
+        <text x="565" y="940" font-size="9.5" text-anchor="end" fill="var(--ink-2)">liquid return, →300</text>
 
         <!-- ================= AREA 500 — O2 SUPPLY ================= -->
         <rect x="650" y="620" width="500" height="340" fill="none" stroke="var(--boundary)" stroke-width="2" stroke-dasharray="9 6"/>
@@ -538,7 +577,7 @@
         <text x="452" y="1510" font-size="11">Indicator light</text>
 
         <g transform="translate(430,1538) scale(0.5)"><use href="#sym-sep"/></g>
-        <text x="452" y="1544" font-size="11">Condensation Valve / Purge Valve (phase-boundary devices)</text>
+        <text x="452" y="1544" font-size="11">Condensation Valve (passive separator)</text>
 
         <line x1="800" y1="1430" x2="850" y2="1430" stroke="currentColor" stroke-width="2.4"/>
         <text x="860" y="1434" font-size="11">Process gas pipe</text>
@@ -559,7 +598,7 @@
         <text x="2400" y="1456" font-size="10.5" text-anchor="end" fill="var(--ink-2)">7 IC housings + passive Area 300/700</text>
 
       </svg>
-      <figcaption>Process flow: Mars atmosphere enters at Area 100, compresses and cools through Area 200, phase-separates in Area 300 into stored N2/O2 gas and byproduct liquid CO2. Area 400 reuses that liquid CO2 (a Purge Valve drains it back to gas) instead of tapping raw Mars air a second time; Area 500 independently tops up an O2 buffer. Area 600 pumps all three into the Area 700 room to the 60/20/20 target; Area 800 skims excess CO2 back out and returns recovered O2/CO2 to their buffers. Every sensor is a real in-game <strong>Pipe Analyzer</strong> (on a pipe network, tag "PA") or <strong>Gas Sensor</strong> (in open atmosphere, tag "GS") — each device tag includes the IC10 pin (d0–d5) it's wired to.</figcaption>
+      <figcaption>Process flow: Mars atmosphere enters at Area 100, compresses and cools through Area 200, phase-separates in Area 300 into stored N2/O2 gas and byproduct liquid CO2. Areas 400 and 500 independently top up CO2 and O2 gas buffers. Area 600 pumps all three into the Area 700 room to the 60/20/20 target; Area 800 skims excess CO2 back out and returns recovered O2/CO2 to their buffers. Every sensor is a real in-game <strong>Pipe Analyzer</strong> (on a pipe network, tag "PA") or <strong>Gas Sensor</strong> (in open atmosphere, tag "GS") — each device tag includes the IC10 pin (d0–d5) it's wired to.</figcaption>
     </figure>
   </div>
 </div>
