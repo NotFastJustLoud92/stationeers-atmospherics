@@ -1,9 +1,9 @@
-alias rawSensor   d0   # Pipe Analyzer / Gas Sensor on the raw intake buffer (Pressure)
-alias vent1       d1   # Large Powered Vent, Mode set to Inward once in-game
-alias vent2       d2   # remove aliases for any vent pins you don't populate
-alias vent3       d3
-alias vent4       d4
-alias reliefValve d5   # Digital Valve, raw buffer -> exterior dump (backup if vent gating lags)
+alias rawSensor_100   d0   # Pipe Analyzer on the raw intake buffer (Pressure)
+alias vent1_100       d1   # Large Powered Vent, Mode set to Inward once in-game
+alias vent2_100       d2   # remove aliases for any vent pins you don't populate
+alias vent3_100       d3
+alias vent4_100       d4
+alias reliefValve_100 d5   # Digital Valve, raw buffer -> exterior dump (backup if vent gating lags)
 
 # Powered Vents have NO internal pressure limiter (unlike Active Vents, which self-cap via
 # PressureInternal/PressureExternal) - this loop is the only thing standing between them and
@@ -11,6 +11,10 @@ alias reliefValve d5   # Digital Valve, raw buffer -> exterior dump (backup if v
 # vents always-on. Gas pipes burst at 60,795 kPa; these numbers are a conservative starting
 # point, not that ceiling. Raise RAW_TARGET later if the compressor bank wants a
 # higher-pressure feed, just keep RELIEF_HIGH with margin under 60,795.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
+# share one network, so alias names need to be globally unique, not just unique within a
+# single script.
 define RAW_TARGET  4000
 define RAW_LOW     3500
 
@@ -21,27 +25,27 @@ main:
 yield
 
 # Vent gating, hysteresis on/off, ganged across all populated vent pins
-l r0 rawSensor Pressure
-l r1 vent1 On
+l r0 rawSensor_100 Pressure
+l r1 vent1_100 On
 beqz r1 vent_off
 slt r2 r0 RAW_TARGET
 j vent_set
 vent_off:
 slt r2 r0 RAW_LOW
 vent_set:
-s vent1 On r2
-s vent2 On r2
-s vent3 On r2
-s vent4 On r2
+s vent1_100 On r2
+s vent2_100 On r2
+s vent3_100 On r2
+s vent4_100 On r2
 
 # Overpressure relief backstop, hysteresis on/off
-l r3 reliefValve On
+l r3 reliefValve_100 On
 beqz r3 relief_off
 sgt r4 r0 RELIEF_LOW
 j relief_set
 relief_off:
 sgt r4 r0 RELIEF_HIGH
 relief_set:
-s reliefValve On r4
+s reliefValve_100 On r4
 
 j main

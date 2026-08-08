@@ -1,7 +1,7 @@
-alias sensor  d0   # Gas Sensor, shared room
-alias n2Pump  d1   # Turbo Volume Pump
-alias o2Pump  d2   # Turbo Volume Pump
-alias co2Pump d3   # Turbo Volume Pump
+alias sensor_600  d0   # Gas Sensor, shared room
+alias n2Pump_600  d1   # Turbo Volume Pump
+alias o2Pump_600  d2   # Turbo Volume Pump
+alias co2Pump_600 d3   # Turbo Volume Pump
 
 # CO2 target raised from 5% to 20% - Ryan confirmed 20% CO2 is fine for humans in this
 # game, so it's now actively maintained at that level instead of the old, more
@@ -10,6 +10,10 @@ alias co2Pump d3   # Turbo Volume Pump
 # Pumps upgraded from Volume Pump to Turbo Volume Pump (2026-08-07) for faster response
 # keeping up with the room's demand swings. No logic change - same On logic type as a
 # regular Volume Pump, only the device placed and wired changes.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
+# share one network, so alias names need to be globally unique, not just unique within a
+# single script.
 define N2_TARGET  60
 define N2_LOW     58
 define O2_TARGET  20
@@ -20,40 +24,40 @@ define CO2_LOW    19
 main:
 yield
 
-l r0 sensor Pressure
-l r1 sensor RatioNitrogen
-l r2 sensor RatioOxygen
-l r3 sensor RatioCarbonDioxide
+l r0 sensor_600 Pressure
+l r1 sensor_600 RatioNitrogen
+l r2 sensor_600 RatioOxygen
+l r3 sensor_600 RatioCarbonDioxide
 
 mul r1 r1 r0   # N2 partial pressure
 mul r2 r2 r0   # O2 partial pressure
 mul r3 r3 r0   # CO2 partial pressure
 
-l r4 n2Pump On
+l r4 n2Pump_600 On
 beqz r4 n2_off
 slt r5 r1 N2_TARGET
 j n2_set
 n2_off:
 slt r5 r1 N2_LOW
 n2_set:
-s n2Pump On r5
+s n2Pump_600 On r5
 
-l r4 o2Pump On
+l r4 o2Pump_600 On
 beqz r4 o2_off
 slt r5 r2 O2_TARGET
 j o2_set
 o2_off:
 slt r5 r2 O2_LOW
 o2_set:
-s o2Pump On r5
+s o2Pump_600 On r5
 
-l r4 co2Pump On
+l r4 co2Pump_600 On
 beqz r4 co2_off
 slt r5 r3 CO2_TARGET
 j co2_set
 co2_off:
 slt r5 r3 CO2_LOW
 co2_set:
-s co2Pump On r5
+s co2Pump_600 On r5
 
 j main

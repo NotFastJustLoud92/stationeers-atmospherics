@@ -1,7 +1,7 @@
-alias n2oSensor      d0   # Pipe Analyzer on the N2O buffer tank (Pressure)
-alias filtrationN2O  d1   # Filtration unit, N2O filter - pulls N2O out of the Ice Crusher's gas output
-alias iceCrusher     d2   # Ice Crusher, Nitrice-fed
-alias n2oReliefValve d3   # Digital Valve, N2O buffer -> exterior, overpressure backstop
+alias n2oSensor_500b      d0   # Pipe Analyzer on the N2O buffer tank (Pressure)
+alias filtrationN2O_500b  d1   # Filtration unit, N2O filter - pulls N2O out of the Ice Crusher's gas output
+alias iceCrusher_500b     d2   # Ice Crusher, Nitrice-fed
+alias n2oReliefValve_500b d3   # Digital Valve, N2O buffer -> exterior, overpressure backstop
 
 # N2O condenses far more easily than anything else piped in this build - its triple point
 # sits around -21C (confirmed via the in-game Stationpedia phase graph), and the liquid
@@ -16,6 +16,12 @@ alias n2oReliefValve d3   # Digital Valve, N2O buffer -> exterior, overpressure 
 # this is a placeholder, not a verified safe ceiling. Watch the buffer's actual phase
 # state once gas is flowing (Stationpedia graph or a Pipe Analyzer reading) and lower
 # N2O_TARGET further if it's still condensing at this pressure.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
+# share one network, so alias names need to be globally unique, not just unique within a
+# single script. This housing gets "_500b" since Area 500 has two housings - this one and
+# atmospherics_icecrusher.ic10 (suffixed "_500") - both share the same iceCrusher name
+# otherwise, since each runs its own separate Ice Crusher.
 define N2O_TARGET 1000
 define N2O_LOW    800
 
@@ -29,24 +35,24 @@ define N2O_RELIEF_LOW  1300
 main:
 yield
 
-l r0 n2oSensor Pressure
-l r1 iceCrusher On
+l r0 n2oSensor_500b Pressure
+l r1 iceCrusher_500b On
 beqz r1 n2o_off
 slt r2 r0 N2O_TARGET
 j n2o_set
 n2o_off:
 slt r2 r0 N2O_LOW
 n2o_set:
-s iceCrusher On r2
-s filtrationN2O On r2
+s iceCrusher_500b On r2
+s filtrationN2O_500b On r2
 
-l r3 n2oReliefValve On
+l r3 n2oReliefValve_500b On
 beqz r3 nrv_off
 sgt r4 r0 N2O_RELIEF_LOW
 j nrv_set
 nrv_off:
 sgt r4 r0 N2O_RELIEF_HIGH
 nrv_set:
-s n2oReliefValve On r4
+s n2oReliefValve_500b On r4
 
 j main

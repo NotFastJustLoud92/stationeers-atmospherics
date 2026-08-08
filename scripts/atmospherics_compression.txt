@@ -1,15 +1,19 @@
-alias tankSensor  d0   # Pipe Analyzer / Gas Sensor on the HP storage manifold (Pressure)
-alias pump1       d1   # Turbo Volume Pump, Raw Intake -> HP network
-alias pump2       d2   # Turbo Volume Pump #2 - remove alias if you only run one
-alias reliefValve d3   # Digital Valve, HP network -> exterior dump (overpressure safety)
-alias coolSensor  d4   # Pipe Analyzer on the post-radiator cooling line (Temperature, Kelvin)
-alias statusLight d5   # Indicator light: On = cold enough for CO2 to be condensing right now
+alias tankSensor_200  d0   # Pipe Analyzer on the HP storage manifold (Pressure)
+alias pump1_200       d1   # Turbo Volume Pump, Raw Intake -> HP network
+alias pump2_200       d2   # Turbo Volume Pump #2 - remove alias if you only run one
+alias reliefValve_200 d3   # Digital Valve, HP network -> exterior dump (overpressure safety)
+alias coolSensor_200  d4   # Pipe Analyzer on the post-radiator cooling line (Temperature, Kelvin)
+alias statusLight_200 d5   # Indicator light: On = cold enough for CO2 to be condensing right now
 
 # HP compression target.
 # CO2 triple point is 218K/517kPa (Stationeers wiki) - well below this target, so liquid
 # phase is reachable. Player reports put CO2 condensation onset near 296K (23C) at ~19,000
 # kPa - not wiki-table-verified, treat as directional. Verify against the in-game phase-change
 # graph once running; raise HP_TARGET if CO2 isn't condensing at your actual radiator temp.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
+# share one network, so alias names need to be globally unique, not just unique within a
+# single script.
 define HP_TARGET  20000
 define HP_LOW     19000
 
@@ -28,31 +32,31 @@ main:
 yield
 
 # Compression, hysteresis on/off, ganged across both pumps
-l r0 tankSensor Pressure
-l r1 pump1 On
+l r0 tankSensor_200 Pressure
+l r1 pump1_200 On
 beqz r1 comp_off
 slt r2 r0 HP_TARGET
 j comp_set
 comp_off:
 slt r2 r0 HP_LOW
 comp_set:
-s pump1 On r2
-s pump2 On r2
+s pump1_200 On r2
+s pump2_200 On r2
 
 # Overpressure relief, hysteresis on/off
-l r3 reliefValve On
+l r3 reliefValve_200 On
 beqz r3 relief_off
 sgt r4 r0 RELIEF_LOW
 j relief_set
 relief_off:
 sgt r4 r0 RELIEF_HIGH
 relief_set:
-s reliefValve On r4
+s reliefValve_200 On r4
 
 # Cooling-loop telemetry only - the Condensation Valve downstream separates liquid
 # CO2 automatically and passively (no IC10 interface), this just reports on it
-l r5 coolSensor Temperature
+l r5 coolSensor_200 Temperature
 sle r6 r5 COND_TEMP_MAX
-s statusLight On r6
+s statusLight_200 On r6
 
 j main

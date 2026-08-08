@@ -351,6 +351,7 @@
     <span class="chip ok"><span class="dot"></span>N2/O2 SPLIT STORAGE + CLOSED-LOOP RECAPTURE (2026-08-07)</span>
     <span class="chip ok"><span class="dot"></span>ICE CRUSHER GAS PRODUCTION + RELIEF VALVES ON EVERY TANK (2026-08-07)</span>
     <span class="chip ok"><span class="dot"></span>POLLUTANT/METHANE/HYDROGEN CAPTURED, NOT VENTED (2026-08-07)</span>
+    <span class="chip ok"><span class="dot"></span>ALL ALIASES MADE GLOBALLY UNIQUE ACROSS THE SHARED NETWORK (2026-08-08)</span>
   </div>
 
   <section class="panel">
@@ -389,7 +390,7 @@
           <tr>
             <td><span class="swatch" style="background:#5fc77e"></span>CO2 Supply <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 400</span></td>
             <td class="mono">Purge Valve (reuses Area 300's liquid CO2) + CO2 buffer tank</td>
-            <td>NEW (2026-08-02), source changed 2026-08-04 — feeds Regulation's <code>co2Pump</code>, which otherwise has no source. Also receives recaptured CO2 from Area 800. See <code>atmospherics_co2supply.ic10</code> below.</td>
+            <td>NEW (2026-08-02), source changed 2026-08-04 — feeds Regulation's <code>co2Pump_600</code>, which otherwise has no source. Also receives recaptured CO2 from Area 800. See <code>atmospherics_co2supply.ic10</code> below.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#b08ee0"></span>Regulation <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 600</span></td>
@@ -489,6 +490,10 @@
       <li class="check-item">
         <span class="tag done">2026-08-07</span>
         <span class="body"><strong>Pollutant and Methane/Hydrogen now captured to storage tanks instead of vented — a Volatile Ice safety contingency.</strong> Ryan's actual tank layout has dedicated storage for CO2, O2, N2, Pollutants, N2O, and a combined mix tank for Methane + Hydrogen — the last one exists because Volatile Ice melts into Methane + Hydrogen if it ends up inside the base (hauled in, dropped, whatever happens), and neither gas belongs in the room atmosphere. Rule: any Pollutant, Methane, or Hydrogen reading at all should trigger scrubbing until it clears, same bare-presence pattern already used for Pollutant, now covering Methane and Hydrogen too — each filter only turns on for its own gas(es), not just because the pump happens to be running. Confirmed along the way: "Volatiles" was renamed to "Methane" in a game update (same gas, same <code>RatioVolatiles</code> logic now reads as <code>RatioMethane</code>), and Hydrogen is a genuinely separate gas type that had no handling anywhere in this build until now — the old Electrolyzer's H2 byproduct was just vented, and that housing is gone. <code>filtrationMethaneH2</code> is one Filtration unit with both cartridges loaded (multiple cartridges in one unit mix their catch together, which is exactly what's wanted here since both go to the same mix tank).</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-08</span>
+        <span class="body"><strong>Every alias in every script renamed to be globally unique, and every "Pipe Analyzer / Gas Sensor" ambiguous device comment resolved to one real device.</strong> Ryan's direction: all 10 IC housings sit on the same data network, so alias names only being unique within their own script isn't good enough — a name collision between two housings on the same network is a real risk once they're actually wired up together. Every alias across all 9 active scripts now carries an area-number suffix (<code>_100</code>, <code>_200</code>, <code>_300</code>, <code>_400</code>, <code>_500</code>, <code>_500b</code>, <code>_600</code>, <code>_800</code>, <code>_800r</code>) — verified duplicate-free across all 44 aliases. Also fixed: three device comments that said "Pipe Analyzer / Gas Sensor" as if a pin could be either — a pin is wired to one specific device, never both. Ryan caught this on <code>rawSensor</code> in <code>atmospherics_intake.ic10</code> first; the same ambiguity turned up on <code>tankSensor</code> (<code>atmospherics_compression.ic10</code>) and <code>co2Sensor</code> (<code>atmospherics_co2supply.ic10</code>) too. All three resolve to <strong>Pipe Analyzer</strong> — each one reads a pipe network's <code>Pressure</code>, not open-room atmosphere, which only a Gas Sensor does. The superseded <code>atmospherics_intake_compression.ic10</code> block below is left un-renamed on purpose — it's historical reference, not part of the live network.</span>
       </li>
     </ul>
 
@@ -609,7 +614,7 @@
       </li>
       <li class="check-item">
         <span class="tag done">Resolved</span>
-        <span class="body"><strong>Regulation's <code>co2Pump</code> had no supply source anywhere in this build.</strong> N2 and O2 both had upstream sources (the collection pipeline, the electrolyzer); CO2 had none, since the whole point of the collection pipeline is to strip CO2 out and liquefy it. Only a rounding error at the old 5% target, but a real blocker now that CO2 is targeted at 20%. Fixed with a new <code>atmospherics_co2supply.ic10</code> housing — as of 2026-08-04 this drains Area 300's liquid CO2 with a Purge Valve into a dedicated buffer, rather than the original approach of tapping a second slipstream of raw Mars air.</span>
+        <span class="body"><strong>Regulation's <code>co2Pump_600</code> had no supply source anywhere in this build.</strong> N2 and O2 both had upstream sources (the collection pipeline, the electrolyzer); CO2 had none, since the whole point of the collection pipeline is to strip CO2 out and liquefy it. Only a rounding error at the old 5% target, but a real blocker now that CO2 is targeted at 20%. Fixed with a new <code>atmospherics_co2supply.ic10</code> housing — as of 2026-08-04 this drains Area 300's liquid CO2 with a Purge Valve into a dedicated buffer, rather than the original approach of tapping a second slipstream of raw Mars air.</span>
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
@@ -617,7 +622,7 @@
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
-        <span class="body"><strong><code>CO2_TARGET</code>/<code>CO2_LOW</code> (4,000/3,500 kPa)</strong> in <code>atmospherics_co2supply.ic10</code> are placeholder buffer-size numbers, same as the other supply-side buffers in this build — not tuned to how fast Regulation's <code>co2Pump</code> actually draws it down. Also unverified: whether draining the Liquid Tank via <code>liquidPurge</code> keeps pace with demand, or drains the tank faster than Area 300 replenishes it — hasn't been tested with the whole loop running at once.</span>
+        <span class="body"><strong><code>CO2_TARGET</code>/<code>CO2_LOW</code> (4,000/3,500 kPa)</strong> in <code>atmospherics_co2supply.ic10</code> are placeholder buffer-size numbers, same as the other supply-side buffers in this build — not tuned to how fast Regulation's <code>co2Pump_600</code> actually draws it down. Also unverified: whether draining the Liquid Tank via <code>liquidPurge_400</code> keeps pace with demand, or drains the tank faster than Area 300 replenishes it — hasn't been tested with the whole loop running at once.</span>
       </li>
       <li class="check-item">
         <span class="tag done">Resolved</span>
@@ -629,7 +634,7 @@
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
-        <span class="body"><strong>Whether a Liquid Digital Valve actually seats/gates correctly on TK-301's liquid pipe network</strong> hasn't been hands-on confirmed in this build — <code>atmospherics_co2supply.ic10</code>'s <code>liquidRelief</code> pin assumes it behaves like the regular Digital Valve does on gas lines. Confirm once wired up.</span>
+        <span class="body"><strong>Whether a Liquid Digital Valve actually seats/gates correctly on TK-301's liquid pipe network</strong> hasn't been hands-on confirmed in this build — <code>atmospherics_co2supply.ic10</code>'s <code>liquidRelief_400</code> pin assumes it behaves like the regular Digital Valve does on gas lines. Confirm once wired up.</span>
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
@@ -641,7 +646,7 @@
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
-        <span class="body"><strong>Pollutant/Volatiles filters triggering on bare presence (<code>RatioPollutant</code>/<code>RatioVolatiles</code> &gt; 0)</strong> assumes those ratios read as a clean 0 when absent, with no floating-point noise that could cause the filter to chatter on/off. Reasonable but unconfirmed — watch for rapid on/off cycling on <code>filtrationPollutant</code>/<code>filtrationVolatiles</code> once running; if it chatters, a small epsilon threshold (e.g. &gt; 0.001) fixes it.</span>
+        <span class="body"><strong>Pollutant/Methane/Hydrogen filters triggering on bare presence (<code>RatioPollutant</code>/<code>RatioMethane</code>/<code>RatioHydrogen</code> &gt; 0)</strong> assumes those ratios read as a clean 0 when absent, with no floating-point noise that could cause the filter to chatter on/off. Reasonable but unconfirmed — watch for rapid on/off cycling on <code>filtrationPollutant_800</code>/<code>filtrationMethaneH2_800</code> once running; if it chatters, a small epsilon threshold (e.g. &gt; 0.001) fixes it.</span>
       </li>
       <li class="check-item">
         <span class="tag open">Untested</span>
@@ -653,7 +658,7 @@
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
-        <span class="body"><strong>Cross-housing pin reads in the new Area 800 pair haven't been confirmed in-game.</strong> <code>atmospherics_recapture_riders.ic10</code>'s <code>pumpState</code> (d0) is wired to the same physical <code>PU-801</code> that <code>atmospherics_recapture.ic10</code> writes to via its own d1 — reading a device's current state from a second IC housing's pin should just work (each pin is its own cable to the device), but this exact two-housing-reading-one-actuator pattern hasn't been used elsewhere in this build before. Confirm the rider housing's O2/N2 filters actually track the main housing's pump state once both are wired up.</span>
+        <span class="body"><strong>Cross-housing pin reads in the new Area 800 pair haven't been confirmed in-game.</strong> <code>atmospherics_recapture_riders.ic10</code>'s <code>pumpState_800r</code> (d0) is wired to the same physical <code>PU-801</code> that <code>atmospherics_recapture.ic10</code> writes to via its own d1 — reading a device's current state from a second IC housing's pin should just work (each pin is its own cable to the device), but this exact two-housing-reading-one-actuator pattern hasn't been used elsewhere in this build before. Confirm the rider housing's O2/N2 filters actually track the main housing's pump state once both are wired up.</span>
       </li>
     </ul>
   </section>
@@ -668,17 +673,20 @@
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_intake.ic10</span><span class="housing">Area 100 · Vent gating · 6 pins, zero HASH() calls</span></div>
-      <pre>alias rawSensor   d0   <span class="c"># Pipe Analyzer / Gas Sensor on the raw intake buffer (Pressure)</span>
-alias vent1       d1   <span class="c"># Large Powered Vent, Mode set to Inward once in-game</span>
-alias vent2       d2   <span class="c"># remove aliases for any vent pins you don't populate</span>
-alias vent3       d3
-alias vent4       d4
-alias reliefValve d5   <span class="c"># Digital Valve, raw buffer -> exterior dump (backup if vent gating lags)</span>
+      <pre>alias rawSensor_100   d0   <span class="c"># Pipe Analyzer on the raw intake buffer (Pressure)</span>
+alias vent1_100       d1   <span class="c"># Large Powered Vent, Mode set to Inward once in-game</span>
+alias vent2_100       d2   <span class="c"># remove aliases for any vent pins you don't populate</span>
+alias vent3_100       d3
+alias vent4_100       d4
+alias reliefValve_100 d5   <span class="c"># Digital Valve, raw buffer -> exterior dump (backup if vent gating lags)</span>
 
 <span class="c"># Powered Vents have NO internal pressure limiter (unlike Active Vents) - this loop
 # is the only thing standing between them and a burst raw-buffer pipe. Gas pipes burst
 # at 60,795 kPa; these numbers are a conservative starting point, not that ceiling.
-# Raise RAW_TARGET later if the Turbo Volume Pump bank wants a higher-pressure feed.</span>
+# Raise RAW_TARGET later if the Turbo Volume Pump bank wants a higher-pressure feed.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique.</span>
 define RAW_TARGET  4000
 define RAW_LOW     3500
 
@@ -689,42 +697,45 @@ main:
 yield
 
 <span class="c"># Vent gating, hysteresis on/off, ganged across all populated vent pins</span>
-l r0 rawSensor Pressure
-l r1 vent1 On
+l r0 rawSensor_100 Pressure
+l r1 vent1_100 On
 beqz r1 vent_off
 slt r2 r0 RAW_TARGET
 j vent_set
 vent_off:
 slt r2 r0 RAW_LOW
 vent_set:
-s vent1 On r2
-s vent2 On r2
-s vent3 On r2
-s vent4 On r2
+s vent1_100 On r2
+s vent2_100 On r2
+s vent3_100 On r2
+s vent4_100 On r2
 
 <span class="c"># Overpressure relief backstop, hysteresis on/off</span>
-l r3 reliefValve On
+l r3 reliefValve_100 On
 beqz r3 relief_off
 sgt r4 r0 RELIEF_LOW
 j relief_set
 relief_off:
 sgt r4 r0 RELIEF_HIGH
 relief_set:
-s reliefValve On r4
+s reliefValve_100 On r4
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_compression.ic10</span><span class="housing">Area 200 · Large-scale collection · 6 pins, zero HASH() calls · uses Turbo Volume Pumps, not "Compressors"</span></div>
-      <pre>alias tankSensor  d0   <span class="c"># Pipe Analyzer / Gas Sensor on the HP storage manifold (Pressure)</span>
-alias pump1       d1   <span class="c"># Turbo Volume Pump, Raw Intake -> HP network</span>
-alias pump2       d2   <span class="c"># Turbo Volume Pump #2 - remove alias if you only run one</span>
-alias reliefValve d3   <span class="c"># Digital Valve, HP network -> exterior dump (overpressure safety)</span>
-alias coolSensor  d4   <span class="c"># Pipe Analyzer on the post-radiator cooling line (Temperature, Kelvin)</span>
-alias statusLight d5   <span class="c"># Indicator light: On = cold enough for CO2 to be condensing right now</span>
+      <pre>alias tankSensor_200  d0   <span class="c"># Pipe Analyzer on the HP storage manifold (Pressure)</span>
+alias pump1_200       d1   <span class="c"># Turbo Volume Pump, Raw Intake -> HP network</span>
+alias pump2_200       d2   <span class="c"># Turbo Volume Pump #2 - remove alias if you only run one</span>
+alias reliefValve_200 d3   <span class="c"># Digital Valve, HP network -> exterior dump (overpressure safety)</span>
+alias coolSensor_200  d4   <span class="c"># Pipe Analyzer on the post-radiator cooling line (Temperature, Kelvin)</span>
+alias statusLight_200 d5   <span class="c"># Indicator light: On = cold enough for CO2 to be condensing right now</span>
 
-<span class="c"># HP compression target - see Researched Facts for the reasoning</span>
+<span class="c"># HP compression target - see Researched Facts for the reasoning
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique.</span>
 define HP_TARGET  20000
 define HP_LOW     19000
 
@@ -740,53 +751,60 @@ main:
 yield
 
 <span class="c"># Compression, hysteresis on/off, ganged across both pumps</span>
-l r0 tankSensor Pressure
-l r1 pump1 On
+l r0 tankSensor_200 Pressure
+l r1 pump1_200 On
 beqz r1 comp_off
 slt r2 r0 HP_TARGET
 j comp_set
 comp_off:
 slt r2 r0 HP_LOW
 comp_set:
-s pump1 On r2
-s pump2 On r2
+s pump1_200 On r2
+s pump2_200 On r2
 
 <span class="c"># Overpressure relief, hysteresis on/off</span>
-l r3 reliefValve On
+l r3 reliefValve_200 On
 beqz r3 relief_off
 sgt r4 r0 RELIEF_LOW
 j relief_set
 relief_off:
 sgt r4 r0 RELIEF_HIGH
 relief_set:
-s reliefValve On r4
+s reliefValve_200 On r4
 
 <span class="c"># Cooling-loop telemetry only - the Condensation Valve downstream
 # separates liquid CO2 automatically and passively, this just reports on it</span>
-l r5 coolSensor Temperature
+l r5 coolSensor_200 Temperature
 sle r6 r5 COND_TEMP_MAX
-s statusLight On r6
+s statusLight_200 On r6
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_gassplit.ic10</span><span class="housing">Area 300 · N2/O2 split · 6 pins · added relief valves (2026-08-07)</span></div>
-      <pre>alias n2Sensor      d0   <span class="c"># Pipe Analyzer on TK-302 (N2 tank)</span>
-alias filtrationN2  d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream</span>
-alias o2Sensor      d2   <span class="c"># Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)</span>
-alias filtrationO2  d3   <span class="c"># Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter</span>
-alias n2ReliefValve d4   <span class="c"># Digital Valve, TK-302 -> exterior, overpressure backstop</span>
-alias o2ReliefValve d5   <span class="c"># Digital Valve, O2 network -> exterior, overpressure backstop</span>
+      <pre>alias n2Sensor_300      d0   <span class="c"># Pipe Analyzer on TK-302 (N2 tank)</span>
+alias filtrationN2_300  d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream</span>
+alias o2Sensor_300      d2   <span class="c"># Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)</span>
+alias filtrationO2_300  d3   <span class="c"># Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter</span>
+alias n2ReliefValve_300 d4   <span class="c"># Digital Valve, TK-302 -> exterior, overpressure backstop</span>
+alias o2ReliefValve_300 d5   <span class="c"># Digital Valve, O2 network -> exterior, overpressure backstop</span>
 
 <span class="c"># Area 300 used to dump N2 and O2 into one shared tank and let Regulation's two
 # separate pumps both draw from that same mixed pipe - that doesn't actually separate
 # anything, a pump just moves whatever's in the pipe, it can't selectively pull one
 # gas out of a mix. Chained an N2 filter then an O2 filter off the post-condensation
 # gas line instead, each into its own hysteresis-gated buffer/network, so Regulation's
-# n2Pump and o2Pump each get a genuinely pure supply instead of both drawing from the
-# same bottle. Placeholder buffer targets, same pattern as the other supply-side
-# buffers - tune once running.</span>
+# n2Pump_600 and o2Pump_600 each get a genuinely pure supply instead of both drawing
+# from the same bottle. Placeholder buffer targets, same pattern as the other
+# supply-side buffers - tune once running.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique. Area 500
+# also reads/writes TK-302 and the O2 network from its own housing
+# (atmospherics_icecrusher.ic10) - that script's o2Sensor_500/n2Sensor_500 point at
+# the same physical devices as this script's o2Sensor_300/n2Sensor_300, just with
+# distinct alias names since they're two different scripts.</span>
 define N2_TARGET 40000
 define N2_LOW    38000
 define O2_TARGET 40000
@@ -803,43 +821,43 @@ define O2_RELIEF_LOW  48000
 main:
 yield
 
-l r0 n2Sensor Pressure
-l r1 filtrationN2 On
+l r0 n2Sensor_300 Pressure
+l r1 filtrationN2_300 On
 beqz r1 n2_off
 slt r2 r0 N2_TARGET
 j n2_set
 n2_off:
 slt r2 r0 N2_LOW
 n2_set:
-s filtrationN2 On r2
+s filtrationN2_300 On r2
 
-l r3 o2Sensor Pressure
-l r4 filtrationO2 On
+l r3 o2Sensor_300 Pressure
+l r4 filtrationO2_300 On
 beqz r4 o2_off
 slt r5 r3 O2_TARGET
 j o2_set
 o2_off:
 slt r5 r3 O2_LOW
 o2_set:
-s filtrationO2 On r5
+s filtrationO2_300 On r5
 
-l r6 n2ReliefValve On
+l r6 n2ReliefValve_300 On
 beqz r6 n2rv_off
 sgt r7 r0 N2_RELIEF_LOW
 j n2rv_set
 n2rv_off:
 sgt r7 r0 N2_RELIEF_HIGH
 n2rv_set:
-s n2ReliefValve On r7
+s n2ReliefValve_300 On r7
 
-l r8 o2ReliefValve On
+l r8 o2ReliefValve_300 On
 beqz r8 o2rv_off
 sgt r9 r3 O2_RELIEF_LOW
 j o2rv_set
 o2rv_off:
 sgt r9 r3 O2_RELIEF_HIGH
 o2rv_set:
-s o2ReliefValve On r9
+s o2ReliefValve_300 On r9
 
 j main</pre>
     </div>
@@ -886,10 +904,10 @@ j main</pre>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_regulation.ic10</span><span class="housing">Area 600 · 4 pins · Turbo Volume Pumps (2026-08-07)</span></div>
-      <pre>alias sensor  d0   <span class="c"># Gas Sensor, shared room</span>
-alias n2Pump  d1   <span class="c"># Turbo Volume Pump</span>
-alias o2Pump  d2   <span class="c"># Turbo Volume Pump</span>
-alias co2Pump d3   <span class="c"># Turbo Volume Pump</span>
+      <pre>alias sensor_600  d0   <span class="c"># Gas Sensor, shared room</span>
+alias n2Pump_600  d1   <span class="c"># Turbo Volume Pump</span>
+alias o2Pump_600  d2   <span class="c"># Turbo Volume Pump</span>
+alias co2Pump_600 d3   <span class="c"># Turbo Volume Pump</span>
 
 <span class="c"># CO2 target raised from 5% to 20% - Ryan confirmed 20% CO2 is fine for humans in this
 # game, so it's now actively maintained at that level instead of the old, more
@@ -897,7 +915,10 @@ alias co2Pump d3   <span class="c"># Turbo Volume Pump</span>
 #
 # Pumps upgraded from Volume Pump to Turbo Volume Pump (2026-08-07) for faster response
 # keeping up with the room's demand swings. No logic change - same On logic type as a
-# regular Volume Pump, only the device placed and wired changes.</span>
+# regular Volume Pump, only the device placed and wired changes.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique.</span>
 define N2_TARGET  60
 define N2_LOW     58
 define O2_TARGET  20
@@ -908,52 +929,52 @@ define CO2_LOW    19
 main:
 yield
 
-l r0 sensor Pressure
-l r1 sensor RatioNitrogen
-l r2 sensor RatioOxygen
-l r3 sensor RatioCarbonDioxide
+l r0 sensor_600 Pressure
+l r1 sensor_600 RatioNitrogen
+l r2 sensor_600 RatioOxygen
+l r3 sensor_600 RatioCarbonDioxide
 
 mul r1 r1 r0   <span class="c"># N2 partial pressure</span>
 mul r2 r2 r0   <span class="c"># O2 partial pressure</span>
 mul r3 r3 r0   <span class="c"># CO2 partial pressure</span>
 
-l r4 n2Pump On
+l r4 n2Pump_600 On
 beqz r4 n2_off
 slt r5 r1 N2_TARGET
 j n2_set
 n2_off:
 slt r5 r1 N2_LOW
 n2_set:
-s n2Pump On r5
+s n2Pump_600 On r5
 
-l r4 o2Pump On
+l r4 o2Pump_600 On
 beqz r4 o2_off
 slt r5 r2 O2_TARGET
 j o2_set
 o2_off:
 slt r5 r2 O2_LOW
 o2_set:
-s o2Pump On r5
+s o2Pump_600 On r5
 
-l r4 co2Pump On
+l r4 co2Pump_600 On
 beqz r4 co2_off
 slt r5 r3 CO2_TARGET
 j co2_set
 co2_off:
 slt r5 r3 CO2_LOW
 co2_set:
-s co2Pump On r5
+s co2Pump_600 On r5
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop, main housing · 5 pins · added Hydrogen, Pollutant/Methane+H2 now captured not vented (2026-08-07)</span></div>
-      <pre>alias sensor              d0   <span class="c"># Gas Sensor, shared room</span>
-alias recyclePump         d1   <span class="c"># Volume Pump, pulls room air into the filtration manifold</span>
-alias filtrationCO2       d2   <span class="c"># Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401</span>
-alias filtrationPollutant d3   <span class="c"># Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank</span>
-alias filtrationMethaneH2 d4   <span class="c"># Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank</span>
+      <pre>alias sensor_800              d0   <span class="c"># Gas Sensor, shared room</span>
+alias recyclePump_800         d1   <span class="c"># Volume Pump, pulls room air into the filtration manifold</span>
+alias filtrationCO2_800       d2   <span class="c"># Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401</span>
+alias filtrationPollutant_800 d3   <span class="c"># Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank</span>
+alias filtrationMethaneH2_800 d4   <span class="c"># Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank</span>
 
 <span class="c"># Every gas this loop touches goes to a tank now, not back into the room - the only
 # thing that ever adds gas to the room atmosphere is Regulation's three pumps
@@ -967,99 +988,108 @@ alias filtrationMethaneH2 d4   <span class="c"># Filtration unit, BOTH Methane a
 # it wasn't handled anywhere in this build before (the old Electrolyzer just vented
 # its H2 byproduct to exterior, and that housing is gone now).
 #
-# filtrationMethaneH2 is ONE Filtration unit with both a Methane filter and a Hydrogen
-# filter cartridge loaded - multiple cartridges in the same unit mix their catch
-# together, which is exactly what's wanted here since both go to the same mix tank
-# anyway. This is a safety contingency: Volatile Ice melts into Methane + Hydrogen if
-# it ends up inside the base (hauled in, dropped, whatever), and neither belongs in
-# the room atmosphere. Ryan's rule: any Pollutant, Methane, or Hydrogen reading at all
-# should trigger scrubbing until it's filtered out - same bare-presence pattern
-# already used for Pollutant. Each filter only turns on for its own gas(es) being
-# present, not just because the pump happens to be running for some other reason.
+# filtrationMethaneH2_800 is ONE Filtration unit with both a Methane filter and a
+# Hydrogen filter cartridge loaded - multiple cartridges in the same unit mix their
+# catch together, which is exactly what's wanted here since both go to the same mix
+# tank anyway. This is a safety contingency: Volatile Ice melts into Methane +
+# Hydrogen if it ends up inside the base (hauled in, dropped, whatever), and neither
+# belongs in the room atmosphere. Ryan's rule: any Pollutant, Methane, or Hydrogen
+# reading at all should trigger scrubbing until it's filtered out - same bare-presence
+# pattern already used for Pollutant. Each filter only turns on for its own gas(es)
+# being present, not just because the pump happens to be running for some other reason.
 #
 # O2 and N2 are controlled by a companion housing (atmospherics_recapture_riders.ic10),
 # not this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor,
 # pump, and 5 filters), so it's split in two. The rider housing just mirrors this
-# housing's recyclePump On state onto the O2 and N2 filters - those two ride along
+# housing's recyclePump_800 On state onto the O2 and N2 filters - those two ride along
 # opportunistically since O2/N2 are wanted gases, not "gas that isn't wanted" like
 # Pollutant/Methane/Hydrogen; all the real decision logic lives here.
 #
 # CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
 # only the excess above target gets skimmed. Pollutant, Methane, and Hydrogen have no
 # target at all though - there's no "acceptable" amount of any of them, so those
-# trigger on bare presence (ratio > 0), no hysteresis band to hover near.</span>
+# trigger on bare presence (ratio > 0), no hysteresis band to hover near.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique. This housing
+# gets "_800"; its companion (atmospherics_recapture_riders.ic10) gets "_800r".</span>
 define CO2_HIGH 20
 define CO2_LOW  19
 
 main:
 yield
 
-l r0 sensor Pressure
-l r1 sensor RatioCarbonDioxide
+l r0 sensor_800 Pressure
+l r1 sensor_800 RatioCarbonDioxide
 mul r1 r1 r0   <span class="c"># CO2 partial pressure</span>
 
-l r2 filtrationCO2 On
+l r2 filtrationCO2_800 On
 beqz r2 co2_off
 sgt r3 r1 CO2_LOW
 j co2_set
 co2_off:
 sgt r3 r1 CO2_HIGH
 co2_set:
-s filtrationCO2 On r3
+s filtrationCO2_800 On r3
 
-l r4 sensor RatioPollutant
+l r4 sensor_800 RatioPollutant
 sgt r5 r4 0
-s filtrationPollutant On r5
+s filtrationPollutant_800 On r5
 
-l r6 sensor RatioMethane
+l r6 sensor_800 RatioMethane
 sgt r7 r6 0
-l r8 sensor RatioHydrogen
+l r8 sensor_800 RatioHydrogen
 sgt r9 r8 0
 max r7 r7 r9
-s filtrationMethaneH2 On r7
+s filtrationMethaneH2_800 On r7
 
 <span class="c"># Pump runs whenever any one of the three triggers above is active</span>
 max r10 r3 r5
 max r10 r10 r7
-s recyclePump On r10
+s recyclePump_800 On r10
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_recapture_riders.ic10</span><span class="housing">Area 800 · Recapture loop, companion housing · 3 pins · NEW (2026-08-07)</span></div>
-      <pre>alias pumpState    d0   <span class="c"># reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to</span>
-alias filtrationO2 d1   <span class="c"># Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank</span>
-alias filtrationN2 d2   <span class="c"># Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302</span>
+      <pre>alias pumpState_800r    d0   <span class="c"># reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to</span>
+alias filtrationO2_800r d1   <span class="c"># Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank</span>
+alias filtrationN2_800r d2   <span class="c"># Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302</span>
 
 <span class="c"># O2 and N2 have no trigger of their own - whenever the main recapture housing turns
-# the pump on (CO2 excess, or any Pollutant/Volatiles present), these two ride along
-# and recover whatever O2 and N2 are in that same slipstream back to their tanks
+# the pump on (CO2 excess, or any Pollutant/Methane/Hydrogen present), these two ride
+# along and recover whatever O2 and N2 are in that same slipstream back to their tanks
 # instead of letting them flow back into the room. Regulation re-doses the room from
 # those tanks on its own schedule, so this is recycling, not a net loss - it's also
 # why nothing here needs its own room sensor, just a read on the pump's current state.
 #
 # This is the companion to atmospherics_recapture.ic10, split out because one IC
 # housing only has 6 pins and the full recapture loop (sensor, pump, 5 filters) needs
-# 7 devices.</span>
+# 7 devices.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique. This housing
+# gets "_800r" ("r" for rider) to stay distinct from the main housing's "_800" and
+# from Area 300/500's own filtrationO2/filtrationN2 aliases.</span>
 
 main:
 yield
 
-l r0 pumpState On
-s filtrationO2 On r0
-s filtrationN2 On r0
+l r0 pumpState_800r On
+s filtrationO2_800r On r0
+s filtrationN2_800r On r0
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_icecrusher.ic10</span><span class="housing">Area 500 · Gas Production, Oxite branch · 5 pins · replaces atmospherics_electrolyzer.ic10 (2026-08-07)</span></div>
-      <pre>alias o2Sensor     d0   <span class="c"># Pipe Analyzer on the O2 output network (same network Area 300's FIL-302 also feeds)</span>
-alias filtrationO2 d1   <span class="c"># Filtration unit, O2 filter - splits O2 out of the Ice Crusher's gas output</span>
-alias n2Sensor     d2   <span class="c"># Pipe Analyzer on TK-302 (Area 300's N2 tank - same tank gassplit.ic10 feeds)</span>
-alias filtrationN2 d3   <span class="c"># Filtration unit, N2 filter - splits N2 out of what's left after the O2 filter</span>
-alias iceCrusher   d4   <span class="c"># Ice Crusher, Oxite-fed (manual ore feed, no automated hopper)</span>
+      <pre>alias o2Sensor_500     d0   <span class="c"># Pipe Analyzer on the O2 output network (same network Area 300's FIL-302 also feeds)</span>
+alias filtrationO2_500 d1   <span class="c"># Filtration unit, O2 filter - splits O2 out of the Ice Crusher's gas output</span>
+alias n2Sensor_500     d2   <span class="c"># Pipe Analyzer on TK-302 (Area 300's N2 tank - same tank gassplit.ic10 feeds)</span>
+alias filtrationN2_500 d3   <span class="c"># Filtration unit, N2 filter - splits N2 out of what's left after the O2 filter</span>
+alias iceCrusher_500   d4   <span class="c"># Ice Crusher, Oxite-fed (manual ore feed, no automated hopper)</span>
 
 <span class="c"># Replaces atmospherics_electrolyzer.ic10 - Ryan asked to swap the ice-fed Electrolyzer
 # for an Ice Crusher running Oxite instead. Oxite crushes into roughly 90% O2 / 10% N2
@@ -1070,9 +1100,12 @@ alias iceCrusher   d4   <span class="c"># Ice Crusher, Oxite-fed (manual ore fee
 # O2 and N2 both feed the SAME shared tanks Area 300's atmospherics_gassplit.ic10 already
 # established - TK-302 for N2, the shared O2 network for O2 - rather than standing up a
 # second separate O2/N2 tank pair here. Both this housing and gassplit.ic10 read/write the
-# same physical tanks; whichever source still has headroom keeps filling, and the relief
-# valves already wired in gassplit.ic10 protect both tanks regardless of which housing is
-# currently feeding them, so this housing doesn't need its own relief valves.
+# same physical tanks (this script's o2Sensor_500/n2Sensor_500 point at the same physical
+# devices as gassplit.ic10's o2Sensor_300/n2Sensor_300, just different alias names since
+# every alias in this build has to be globally unique across the shared network); whichever
+# source still has headroom keeps filling, and the relief valves already wired in
+# gassplit.ic10 protect both tanks regardless of which housing is currently feeding them,
+# so this housing doesn't need its own relief valves.
 #
 # Placeholder buffer targets, same numbers as gassplit.ic10's targets since they're the
 # same tanks - keep these two scripts' TARGET/LOW values in sync if you tune one.</span>
@@ -1084,39 +1117,39 @@ define N2_LOW    38000
 main:
 yield
 
-l r0 o2Sensor Pressure
-l r1 filtrationO2 On
+l r0 o2Sensor_500 Pressure
+l r1 filtrationO2_500 On
 beqz r1 o2_off
 slt r2 r0 O2_TARGET
 j o2_set
 o2_off:
 slt r2 r0 O2_LOW
 o2_set:
-s filtrationO2 On r2
+s filtrationO2_500 On r2
 
-l r3 n2Sensor Pressure
-l r4 filtrationN2 On
+l r3 n2Sensor_500 Pressure
+l r4 filtrationN2_500 On
 beqz r4 n2_off
 slt r5 r3 N2_TARGET
 j n2_set
 n2_off:
 slt r5 r3 N2_LOW
 n2_set:
-s filtrationN2 On r5
+s filtrationN2_500 On r5
 
 <span class="c"># Ice Crusher runs whenever either filter still needs feeding</span>
 max r6 r2 r5
-s iceCrusher On r6
+s iceCrusher_500 On r6
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_n2osupply.ic10</span><span class="housing">Area 500 · Gas Production, Nitrice branch · 4 pins · NEW (2026-08-07)</span></div>
-      <pre>alias n2oSensor      d0   <span class="c"># Pipe Analyzer on the N2O buffer tank (Pressure)</span>
-alias filtrationN2O  d1   <span class="c"># Filtration unit, N2O filter - pulls N2O out of the Ice Crusher's gas output</span>
-alias iceCrusher     d2   <span class="c"># Ice Crusher, Nitrice-fed</span>
-alias n2oReliefValve d3   <span class="c"># Digital Valve, N2O buffer -> exterior, overpressure backstop</span>
+      <pre>alias n2oSensor_500b      d0   <span class="c"># Pipe Analyzer on the N2O buffer tank (Pressure)</span>
+alias filtrationN2O_500b  d1   <span class="c"># Filtration unit, N2O filter - pulls N2O out of the Ice Crusher's gas output</span>
+alias iceCrusher_500b     d2   <span class="c"># Ice Crusher, Nitrice-fed</span>
+alias n2oReliefValve_500b d3   <span class="c"># Digital Valve, N2O buffer -> exterior, overpressure backstop</span>
 
 <span class="c"># N2O condenses far more easily than anything else piped in this build - its triple
 # point sits around -21C (confirmed via the in-game Stationpedia phase graph), and the
@@ -1130,7 +1163,13 @@ alias n2oReliefValve d3   <span class="c"># Digital Valve, N2O buffer -> exterio
 # Buffer target kept well below every other supply-side buffer in this build on purpose
 # - this is a placeholder, not a verified safe ceiling. Watch the buffer's actual phase
 # state once gas is flowing (Stationpedia graph or a Pipe Analyzer reading) and lower
-# N2O_TARGET further if it's still condensing at this pressure.</span>
+# N2O_TARGET further if it's still condensing at this pressure.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique. This housing
+# gets "_500b" since Area 500 has two housings - this one and
+# atmospherics_icecrusher.ic10 (suffixed "_500") - both share the same iceCrusher name
+# otherwise, since each runs its own separate Ice Crusher.</span>
 define N2O_TARGET 1000
 define N2O_LOW    800
 
@@ -1144,94 +1183,97 @@ define N2O_RELIEF_LOW  1300
 main:
 yield
 
-l r0 n2oSensor Pressure
-l r1 iceCrusher On
+l r0 n2oSensor_500b Pressure
+l r1 iceCrusher_500b On
 beqz r1 n2o_off
 slt r2 r0 N2O_TARGET
 j n2o_set
 n2o_off:
 slt r2 r0 N2O_LOW
 n2o_set:
-s iceCrusher On r2
-s filtrationN2O On r2
+s iceCrusher_500b On r2
+s filtrationN2O_500b On r2
 
-l r3 n2oReliefValve On
+l r3 n2oReliefValve_500b On
 beqz r3 nrv_off
 sgt r4 r0 N2O_RELIEF_LOW
 j nrv_set
 nrv_off:
 sgt r4 r0 N2O_RELIEF_HIGH
 nrv_set:
-s n2oReliefValve On r4
+s n2oReliefValve_500b On r4
 
 j main</pre>
     </div>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_co2supply.ic10</span><span class="housing">Area 400 · CO2 Supply · 5 pins · added TK-301/TK-401 relief valves (2026-08-07)</span></div>
-      <pre>alias co2Sensor      d0   <span class="c"># Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)</span>
-alias liquidPurge    d1   <span class="c"># Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas</span>
-alias liquidSensor   d2   <span class="c"># Pipe Analyzer on TK-301 (Area 300 Liquid Tank bank, liquid CO2)</span>
-alias liquidRelief   d3   <span class="c"># Liquid Digital Valve, TK-301 liquid line -> exterior, overpressure backstop</span>
-alias co2ReliefValve d4   <span class="c"># Digital Valve, CO2 buffer tank -> exterior, overpressure backstop</span>
+      <pre>alias co2Sensor_400      d0   <span class="c"># Pipe Analyzer on the CO2 buffer tank (Pressure)</span>
+alias liquidPurge_400    d1   <span class="c"># Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas</span>
+alias liquidSensor_400   d2   <span class="c"># Pipe Analyzer on TK-301 (Area 300 Liquid Tank bank, liquid CO2)</span>
+alias liquidRelief_400   d3   <span class="c"># Liquid Digital Valve, TK-301 liquid line -> exterior, overpressure backstop</span>
+alias co2ReliefValve_400 d4   <span class="c"># Digital Valve, CO2 buffer tank -> exterior, overpressure backstop</span>
 
-<span class="c"># Regulation's co2Pump had no source anywhere in this build until now - it was pumping
-# against an empty supply. Reuses the liquid CO2 Area 300's Condensation Valve already
-# separates out (previously just parked unused in the Liquid Tank) instead of tapping a
-# second, separate slipstream of raw Mars air - no point re-extracting CO2 from scratch
-# when the collection pipeline already condenses it out a few meters away. Setting fixed
-# at 0 for maximum extraction while On; pair with a backup Condensation Valve on the gas
-# output (passive, no pin needed) to catch anything that re-condenses before the tank -
-# community-documented failure mode if you skip it. Placeholder buffer size, same pattern
-# as the other supply-side buffers - tune once running.</span>
+<span class="c"># Regulation's co2Pump_600 had no source anywhere in this build until now - it was
+# pumping against an empty supply. Reuses the liquid CO2 Area 300's Condensation Valve
+# already separates out (previously just parked unused in the Liquid Tank) instead of
+# tapping a second, separate slipstream of raw Mars air - no point re-extracting CO2
+# from scratch when the collection pipeline already condenses it out a few meters away.
+# Setting fixed at 0 for maximum extraction while On; pair with a backup Condensation
+# Valve on the gas output (passive, no pin needed) to catch anything that re-condenses
+# before the tank - community-documented failure mode if you skip it. Placeholder
+# buffer size, same pattern as the other supply-side buffers - tune once running.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
+# housings share one network, so alias names need to be globally unique.</span>
 define CO2_TARGET 4000
 define CO2_LOW    3500
 
 <span class="c"># Relief backstops. Liquid pipes burst at only 6,080 kPa - 10% of a gas pipe - so
 # TK-301's relief sits with real margin under that, not the usual near-60,000 kPa
 # ceiling used on the gas-side tanks. TK-401's CO2 buffer relief also stays modest since
-# its own operating target is small; this is a backstop against liquidPurge sticking
+# its own operating target is small; this is a backstop against liquidPurge_400 sticking
 # open, not a high-pressure design ceiling. Both vent to exterior, not the room.
-# liquidRelief is a Liquid Digital Valve, not the regular gas-side Digital Valve used
-# everywhere else in this build.</span>
+# liquidRelief_400 is a Liquid Digital Valve, not the regular gas-side Digital Valve
+# used everywhere else in this build.</span>
 define LIQUID_RELIEF_HIGH 4500
 define LIQUID_RELIEF_LOW  4000
 define CO2_RELIEF_HIGH    6000
 define CO2_RELIEF_LOW     5500
 
-s liquidPurge Setting 0
+s liquidPurge_400 Setting 0
 
 main:
 yield
 
-l r0 co2Sensor Pressure
-l r1 liquidPurge On
+l r0 co2Sensor_400 Pressure
+l r1 liquidPurge_400 On
 beqz r1 purge_off
 slt r2 r0 CO2_TARGET
 j purge_set
 purge_off:
 slt r2 r0 CO2_LOW
 purge_set:
-s liquidPurge On r2
+s liquidPurge_400 On r2
 
-l r3 liquidSensor Pressure
-l r4 liquidRelief On
+l r3 liquidSensor_400 Pressure
+l r4 liquidRelief_400 On
 beqz r4 lrv_off
 sgt r5 r3 LIQUID_RELIEF_LOW
 j lrv_set
 lrv_off:
 sgt r5 r3 LIQUID_RELIEF_HIGH
 lrv_set:
-s liquidRelief On r5
+s liquidRelief_400 On r5
 
-l r6 co2ReliefValve On
+l r6 co2ReliefValve_400 On
 beqz r6 crv_off
 sgt r7 r0 CO2_RELIEF_LOW
 j crv_set
 crv_off:
 sgt r7 r0 CO2_RELIEF_HIGH
 crv_set:
-s co2ReliefValve On r7
+s co2ReliefValve_400 On r7
 
 j main</pre>
     </div>
@@ -1242,7 +1284,7 @@ j main</pre>
       <h2>Resume here</h2>
       <span class="panel-num">next session</span>
     </div>
-    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive, 6 pins including two relief valves) — an N2 filter then an O2 filter, each into its own tank/network. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Area 500 is now <strong>gas production</strong>, not just O2 supply: the Electrolyzer is gone, replaced by two Ice Crushers — <code>atmospherics_icecrusher.ic10</code> (Oxite → O2/N2, feeding the same shared tanks Area 300 uses) and <code>atmospherics_n2osupply.ic10</code> (Nitrice → N2O, its own low-pressure/room-temperature branch since N2O condenses far more easily than anything else here — triple point ≈ −21°C, confirmed from the in-game phase graph). Wire <code>atmospherics_co2supply.ic10</code> (now 5 pins, added TK-301 and TK-401 relief valves) to the Liquid Tanks in Area 300 — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (sensor, pump, CO2/Pollutant/Volatiles) plus companion <code>atmospherics_recapture_riders.ic10</code> (O2/N2) — plus a passive emergency buffer tank on its room-air intake for depressurization events. Every tank in the build now has its own relief valve venting to exterior, not just the two that started with one. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and the shared O2 network into the shared-room Regulation stage (60/20/20 N2/O2/CO2, three Turbo Volume Pumps). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, every relief valve's trip threshold, the N2O buffer's actual phase behavior, whether a Liquid Digital Valve gates TK-301 correctly, whether the rider housing actually tracks the main housing's pump state, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
+    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive, 6 pins including two relief valves) — an N2 filter then an O2 filter, each into its own tank/network. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Area 500 is now <strong>gas production</strong>, not just O2 supply: the Electrolyzer is gone, replaced by two Ice Crushers — <code>atmospherics_icecrusher.ic10</code> (Oxite → O2/N2, feeding the same shared tanks Area 300 uses) and <code>atmospherics_n2osupply.ic10</code> (Nitrice → N2O, its own low-pressure/room-temperature branch since N2O condenses far more easily than anything else here — triple point ≈ −21°C, confirmed from the in-game phase graph). Wire <code>atmospherics_co2supply.ic10</code> (now 5 pins, added TK-301 and TK-401 relief valves) to the Liquid Tanks in Area 300 — Regulation's <code>co2Pump_600</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (sensor, pump, CO2/Pollutant/Methane+Hydrogen) plus companion <code>atmospherics_recapture_riders.ic10</code> (O2/N2) — plus a passive emergency buffer tank on its room-air intake for depressurization events. Every tank in the build now has its own relief valve venting to exterior, not just the two that started with one. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and the shared O2 network into the shared-room Regulation stage (60/20/20 N2/O2/CO2, three Turbo Volume Pumps). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, every relief valve's trip threshold, the N2O buffer's actual phase behavior, whether a Liquid Digital Valve gates TK-301 correctly, whether the rider housing actually tracks the main housing's pump state, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
   </section>
 
   <footer>

@@ -1,22 +1,27 @@
-alias pumpState    d0   # reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to
-alias filtrationO2 d1   # Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank
-alias filtrationN2 d2   # Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302
+alias pumpState_800r    d0   # reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to
+alias filtrationO2_800r d1   # Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank
+alias filtrationN2_800r d2   # Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302
 
 # O2 and N2 have no trigger of their own - whenever the main recapture housing turns the
-# pump on (CO2 excess, or any Pollutant/Volatiles present), these two ride along and recover
-# whatever O2 and N2 are in that same slipstream back to their tanks instead of letting them
-# flow back into the room. Regulation re-doses the room from those tanks on its own schedule,
-# so this is recycling, not a net loss - it's also why nothing here needs its own room
-# sensor, just a read on the pump's current state.
+# pump on (CO2 excess, or any Pollutant/Methane/Hydrogen present), these two ride along and
+# recover whatever O2 and N2 are in that same slipstream back to their tanks instead of
+# letting them flow back into the room. Regulation re-doses the room from those tanks on its
+# own schedule, so this is recycling, not a net loss - it's also why nothing here needs its
+# own room sensor, just a read on the pump's current state.
 #
 # This is the companion to atmospherics_recapture.ic10, split out because one IC housing
 # only has 6 pins and the full recapture loop (sensor, pump, 5 filters) needs 7 devices.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
+# share one network, so alias names need to be globally unique, not just unique within a
+# single script. This housing gets "_800r" ("r" for rider) to stay distinct from the main
+# housing's "_800" and from Area 300/500's own filtrationO2/filtrationN2 aliases.
 
 main:
 yield
 
-l r0 pumpState On
-s filtrationO2 On r0
-s filtrationN2 On r0
+l r0 pumpState_800r On
+s filtrationO2_800r On r0
+s filtrationN2_800r On r0
 
 j main

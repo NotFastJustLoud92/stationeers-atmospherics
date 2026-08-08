@@ -1,8 +1,8 @@
-alias sensor                d0   # Gas Sensor, shared room
-alias recyclePump           d1   # Volume Pump, pulls room air into the filtration manifold
-alias filtrationCO2         d2   # Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401
-alias filtrationPollutant   d3   # Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank
-alias filtrationMethaneH2   d4   # Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank
+alias sensor_800              d0   # Gas Sensor, shared room
+alias recyclePump_800         d1   # Volume Pump, pulls room air into the filtration manifold
+alias filtrationCO2_800       d2   # Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401
+alias filtrationPollutant_800 d3   # Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank
+alias filtrationMethaneH2_800 d4   # Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank
 
 # Every gas this loop touches goes to a tank now, not back into the room - the only thing
 # that ever adds gas to the room atmosphere is Regulation's three pumps (atmospherics_
@@ -15,7 +15,7 @@ alias filtrationMethaneH2   d4   # Filtration unit, BOTH Methane and Hydrogen ca
 # it wasn't handled anywhere in this build before (the old Electrolyzer just vented its H2
 # byproduct to exterior, and that housing is gone now).
 #
-# filtrationMethaneH2 is ONE Filtration unit with both a Methane filter and a Hydrogen
+# filtrationMethaneH2_800 is ONE Filtration unit with both a Methane filter and a Hydrogen
 # filter cartridge loaded - multiple cartridges in the same unit mix their catch together,
 # which is exactly what's wanted here since both go to the same mix tank anyway. This is
 # a safety contingency: Volatile Ice melts into Methane + Hydrogen if it ends up inside the
@@ -27,48 +27,53 @@ alias filtrationMethaneH2   d4   # Filtration unit, BOTH Methane and Hydrogen ca
 #
 # O2 and N2 are controlled by a companion housing (atmospherics_recapture_riders.ic10), not
 # this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump, and
-# 5 filters), so it's split in two. The rider housing just mirrors this housing's recyclePump
-# On state onto the O2 and N2 filters - those two ride along opportunistically since O2/N2
-# are wanted gases, not "gas that isn't wanted" like Pollutant/Methane/Hydrogen; all the real
-# decision logic lives here.
+# 5 filters), so it's split in two. The rider housing just mirrors this housing's
+# recyclePump_800 On state onto the O2 and N2 filters - those two ride along
+# opportunistically since O2/N2 are wanted gases, not "gas that isn't wanted" like
+# Pollutant/Methane/Hydrogen; all the real decision logic lives here.
 #
 # CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%, only
 # the excess above target gets skimmed. Pollutant, Methane, and Hydrogen have no target at
 # all though - there's no "acceptable" amount of any of them, so those trigger on bare
 # presence (ratio > 0), no hysteresis band to hover near.
+#
+# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
+# share one network, so alias names need to be globally unique, not just unique within a
+# single script. This housing gets "_800"; its companion (atmospherics_recapture_riders.ic10)
+# gets "_800r".
 define CO2_HIGH 20
 define CO2_LOW  19
 
 main:
 yield
 
-l r0 sensor Pressure
-l r1 sensor RatioCarbonDioxide
+l r0 sensor_800 Pressure
+l r1 sensor_800 RatioCarbonDioxide
 mul r1 r1 r0   # CO2 partial pressure
 
-l r2 filtrationCO2 On
+l r2 filtrationCO2_800 On
 beqz r2 co2_off
 sgt r3 r1 CO2_LOW
 j co2_set
 co2_off:
 sgt r3 r1 CO2_HIGH
 co2_set:
-s filtrationCO2 On r3
+s filtrationCO2_800 On r3
 
-l r4 sensor RatioPollutant
+l r4 sensor_800 RatioPollutant
 sgt r5 r4 0
-s filtrationPollutant On r5
+s filtrationPollutant_800 On r5
 
-l r6 sensor RatioMethane
+l r6 sensor_800 RatioMethane
 sgt r7 r6 0
-l r8 sensor RatioHydrogen
+l r8 sensor_800 RatioHydrogen
 sgt r9 r8 0
 max r7 r7 r9
-s filtrationMethaneH2 On r7
+s filtrationMethaneH2_800 On r7
 
 # Pump runs whenever any one of the three triggers above is active
 max r10 r3 r5
 max r10 r10 r7
-s recyclePump On r10
+s recyclePump_800 On r10
 
 j main
