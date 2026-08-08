@@ -23,7 +23,7 @@ Open these directly in a browser (no server needed):
 |---|---|
 | `atmospherics_intake.ic10` | Area 100 — vent gating, no internal pressure limiter on Powered Vents so this is the only overpressure protection on the raw side |
 | `atmospherics_compression.ic10` | Area 200 — Turbo Volume Pump bank + cooling telemetry + overpressure relief |
-| `atmospherics_co2supply.ic10` | Area 400 — taps raw Mars air for a CO2 gas buffer (Regulation has nowhere else to draw CO2 from) |
+| `atmospherics_co2supply.ic10` | Area 400 — Purge Valve drains Area 300's liquid CO2 into a gas buffer (Regulation has nowhere else to draw CO2 from; reuses what collection already condenses out instead of re-filtering raw Mars air) |
 | `atmospherics_electrolyzer.ic10` | Area 500 — O2 supply + autoignition safety trip (H2/O2 mix ignites above 300°C) |
 | `atmospherics_regulation.ic10` | Area 600 — holds the room at 60% N2 / 20% O2 / 20% CO2 @ 100 kPa |
 | `atmospherics_recapture.ic10` | Area 800 — skims excess CO2 above 20%, plus Pollutant/Volatiles on any presence |
@@ -34,6 +34,6 @@ Open these directly in a browser (no server needed):
 
 - Every device is direct-wired to an IC housing pin — no `HASH()` batch-addressing anywhere, since a wrong guessed hash fails silently instead of erroring.
 - "Compressor" is not a real Stationeers device — the compression stage uses **Turbo Volume Pumps**.
-- The Condensation Valve that separates liquid CO2 out of the gas line is fully passive — no IC10 wiring needed for it.
+- The Condensation Valve that separates liquid CO2 out of the gas line is fully passive — no IC10 wiring needed for it. Area 400 uses a second one (CV-402) as a backup on the Purge Valve's output, to catch gas that re-condenses before the buffer tank — a documented failure mode of Purge Valves.
 - Area 200's exterior radiators must be the radiative **Medium Radiator**, not Medium **Convection** Radiator — Convection needs surrounding atmosphere to work and has no use in a vacuum.
 - Full reasoning, sourcing, and the list of what's still unverified is in the handoff log.

@@ -385,8 +385,8 @@
           </tr>
           <tr>
             <td><span class="swatch" style="background:#5fc77e"></span>CO2 Supply <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 400</span></td>
-            <td class="mono">Filtration (raw Mars-air tap) + CO2 buffer tank</td>
-            <td>NEW (2026-08-02) — was missing entirely; feeds Regulation's <code>co2Pump</code>. See <code>atmospherics_co2supply.ic10</code> below.</td>
+            <td class="mono">Purge Valve (reuses Area 300's liquid CO2) + CO2 buffer tank</td>
+            <td>NEW (2026-08-02), source changed 2026-08-04 — feeds Regulation's <code>co2Pump</code>, which otherwise has no source. See <code>atmospherics_co2supply.ic10</code> below.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#b08ee0"></span>Regulation <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 600</span></td>
@@ -448,6 +448,10 @@
         <span class="body"><strong>Recapture now also scrubs Pollutant and Volatiles, not just CO2.</strong> Two more Filtration units added to Area 800 (<code>filtrationPollutant</code>, <code>filtrationVolatiles</code>), each independently gated on bare presence (<code>RatioPollutant</code>/<code>RatioVolatiles</code> &gt; 0) rather than a hysteresis band — unlike CO2, there's no acceptable target level for either, so any trace at all triggers that filter. <code>recyclePump</code> now runs whenever any of the three filters is active (OR via <code>max</code>), not just on the CO2 trigger.</span>
       </li>
       <li class="check-item">
+        <span class="tag done">2026-08-04</span>
+        <span class="body"><strong>CO2 Supply now reuses the collection pipeline's own liquid CO2 instead of re-extracting from raw Mars air a second time.</strong> Ryan pointed out the redundancy directly: Area 300 already condenses CO2 to liquid, and Area 400 was separately filtering fresh Mars air for CO2 — two subsystems doing overlapping work. The liquid CO2 was previously just parked unused in the Liquid Tank. Fixed by draining it with a <strong>Purge Valve</strong> (<code>liquidPurge</code>, <code>Setting</code> fixed at 0) instead of a Digital Valve + Filtration — the valve continuously skims off whatever CO2 evaporates from the liquid, which also encourages more to evaporate, net-converting liquid back to gas. A backup <strong>Condensation Valve</strong> sits on the gas output to catch anything that re-condenses before reaching the buffer tank, per documented community practice. Area 400 dropped from 3 pins to 2 (no more Filtration unit needed — the liquid was already pure CO2, nothing left to filter out).</span>
+      </li>
+      <li class="check-item">
         <span class="tag done">Simplified</span>
         <span class="body"><strong>Liquid CO2 separation is now a passive device, not scripted logic.</strong> The <strong>Condensation Valve</strong> does one-way, automatic drainage of any liquid phase out of a gas pipe into a liquid pipe network — no On/Off, no IC10 interface at all (its control mode is manual/passive by design, confirmed via community sources). Plumb it directly into the cooled HP line with its liquid side running to a Liquid Tank, and it separates CO2 the moment it condenses. This is strictly more reliable than a temperature-gated Digital Valve guessing at a threshold — it reacts to the actual physical phase, not a sensor reading of it.</span>
       </li>
@@ -490,7 +494,7 @@
           <tr>
             <td>Liquid CO2</td>
             <td class="mono">Liquid Tank</td>
-            <td>None — byproduct storage, useful as coolant/export later.</td>
+            <td>None directly — this is the source the CO2 supply branch below draws from, not just parked byproduct.</td>
           </tr>
           <tr>
             <td>Storage</td>
@@ -499,8 +503,8 @@
           </tr>
           <tr>
             <td>CO2 supply (branch)</td>
-            <td class="mono">Filtration, tapped off the raw buffer (pre-compression) → CO2 buffer tank</td>
-            <td><code>atmospherics_co2supply.ic10</code> — hysteresis on the CO2 buffer's own pressure. Feeds Regulation's <code>co2Pump</code>, which otherwise has no source.</td>
+            <td class="mono">Purge Valve on the Liquid Tank (Area 300) → backup Condensation Valve → CO2 buffer tank</td>
+            <td><code>atmospherics_co2supply.ic10</code> — hysteresis on the CO2 buffer's own pressure. Feeds Regulation's <code>co2Pump</code>, which otherwise has no source. Reuses the liquid CO2 the collection pipeline already condenses out, instead of tapping raw Mars air a second time.</td>
           </tr>
         </tbody>
       </table>
@@ -522,11 +526,12 @@
       <li class="source-item">Large Tank: <strong>50,000 L</strong> capacity, <strong>60,000 kPa</strong> burst pressure.<span class="src">Stationeers Community Wiki</span></li>
       <li class="source-item">Gas pipes (normal and insulated — insulation only affects heat transfer, not strength) burst at <strong>60,795 kPa</strong> mechanical pressure differential. Liquid pipes burst at only <strong>6,080 kPa</strong> — 10% of a gas pipe. This resolves the old "verify pipe tier vs. tank burst" open item: the Large Tank (60,000 kPa) is the actual weakest link on the gas side, slightly under the pipe's own 60,795 kPa, so <code>RELIEF_HIGH</code> at 45,000 kPa already has the right target. The liquid side is a separate, much lower-headroom concern — see Open Items.<span class="src">Stationeers Community Wiki / Steam Community discussion</span></li>
       <li class="source-item"><strong>Powered Vent has no internal pressure limiter</strong> — unlike the Active Vent, which self-caps via its own <code>PressureInternal</code>/<code>PressureExternal</code> logic types and won't over-pressurize the network it's filling. A Powered Vent left running against a closed pipe network will keep pumping past the pipe's burst point. This is what caused the pipe-bursting issue and is why vents are now IC-gated below instead of left always-on.<span class="src">Steam Community discussion</span></li>
-      <li class="source-item"><strong>Condensation Valve</strong>: one-way liquid drain from a gas pipe network into a liquid pipe network; control mode is manual/passive, not an IC10-scriptable device. <strong>Purge Valve</strong> does the reverse (drains gas out of a liquid network) and risks flooding/bursting the liquid line if overused — not used in this design, noted only as a known related device.<span class="src">Stationeers Community Wiki + Steam Community discussion</span></li>
+      <li class="source-item"><strong>Condensation Valve</strong>: one-way liquid drain from a gas pipe network into a liquid pipe network; control mode is manual/passive, not an IC10-scriptable device. <strong>Purge Valve</strong> does the reverse (drains gas out of a liquid network) — used deliberately in Area 400 below to recover CO2 gas from the Liquid Tank, not just a related device to note.<span class="src">Stationeers Community Wiki + Steam Community discussion</span></li>
       <li class="source-item">The <code>Temperature</code> IC10 logic type reads/writes in <strong>Kelvin</strong>, confirmed against known IC10 behavior — this is what exposed the old script's dead CO2-drain branch above.<span class="src">Known IC10 behavior, cross-checked during this session</span></li>
       <li class="source-item"><strong>"Compressor" is not a real Stationeers device</strong> — confirmed by Ryan directly after searches kept failing to turn up a device by that name. The correct device for forcibly moving gas between two pipe networks against a large pressure differential is the <strong>Turbo Volume Pump</strong> (moves gas up to 10× faster than a standard Volume Pump, adjustable 0–100L valve, ~200W base + 6W/L). Volume Pump/Turbo Volume Pump don't stop moving gas on their own regardless of downstream pressure — same reason our IC10 hysteresis gating on tank pressure is required, not optional.<span class="src">Confirmed directly by Ryan; Turbo Volume Pump specs via Stationeers Community Wiki</span></li>
       <li class="source-item"><strong>Electrolyzer autoignition risk.</strong> If the electrolyzer's output network (where H2 and O2 share a pipe before being split off) rises above 300°C (573K), the mix autoignites — converts the O2/H2 to steam and causes further electrolyzer output to autocombust too. This is why the electrolyzer isn't left unscripted like the old O2 Supply description implied: <code>atmospherics_electrolyzer.ic10</code> below trips a safety vent + shuts the unit off well before that threshold.<span class="src">Stationeers Community Wiki</span></li>
       <li class="source-item"><strong>Radiator type matters for the Area 200 cooling stage.</strong> <strong>Medium Convection Radiator</strong> exchanges heat with the surrounding atmosphere through a grill — it has "no use in a vacuum." <strong>Medium Radiator</strong> (radiative, non-convection) radiates heat directly into space and works with no atmosphere present. Area 200's radiators sit exterior, dumping heat into Mars' thin atmosphere to condense CO2 — that's the radiative device, not the Convection one, which would do close to nothing out there.<span class="src">Stationeers Community Wiki (Medium Radiator) + stationeering.substack.com, Life Support III: Radiative Cooling</span></li>
+      <li class="source-item"><strong>Purge Valve recovers gas from a liquid tank on purpose</strong> — this is a documented, commonly-used pattern, not a workaround. Draining existing gas headspace from a liquid line drops local pressure, which pushes more of the liquid to evaporate to refill it; setting the Purge Valve's pressure limit toward 0 makes this aggressive. The known failure mode: evaporated gas can "leak through" the Purge Valve and re-condense on the gas side, so the standard fix is a Condensation Valve immediately after it (opposite direction from the main one) draining any re-condensed liquid back to the liquid line, to prevent pipe ruptures. This is what <code>atmospherics_co2supply.ic10</code> below now does with Area 300's liquid CO2 instead of tapping raw Mars air a second time.<span class="src">Stationeers Community Wiki (Purge Valve) + Steam Community discussions ("How to pump out gas from a liquid tank?")</span></li>
     </ul>
     <p class="muted" style="margin-top:14px;">One source (a Substack "Thermal Conditioning &amp; Gas Separation" guide) surfaced oddly-named devices ("TEC-V", "PGL filtration") that don't match any known vanilla Stationeers device — likely a heavily-modded build or a bad fetch/summary. Its specific numbers (293–303K window, 13.79 kPa/K ratio, 48,636 kPa max) were <strong>not</strong> used anywhere in this design; treat that source as unreliable.</p>
   </section>
@@ -563,11 +568,15 @@
       </li>
       <li class="check-item">
         <span class="tag done">Resolved</span>
-        <span class="body"><strong>Regulation's <code>co2Pump</code> had no supply source anywhere in this build.</strong> N2 and O2 both had upstream sources (the collection pipeline, the electrolyzer); CO2 had none, since the whole point of the collection pipeline is to strip CO2 out and liquefy it. Only a rounding error at the old 5% target, but a real blocker now that CO2 is targeted at 20%. Fixed with a new <code>atmospherics_co2supply.ic10</code> housing — taps a slipstream of raw (pre-compression) Mars air, already &gt;90% CO2, through Filtration into a dedicated buffer.</span>
+        <span class="body"><strong>Regulation's <code>co2Pump</code> had no supply source anywhere in this build.</strong> N2 and O2 both had upstream sources (the collection pipeline, the electrolyzer); CO2 had none, since the whole point of the collection pipeline is to strip CO2 out and liquefy it. Only a rounding error at the old 5% target, but a real blocker now that CO2 is targeted at 20%. Fixed with a new <code>atmospherics_co2supply.ic10</code> housing — as of 2026-08-04 this drains Area 300's liquid CO2 with a Purge Valve into a dedicated buffer, rather than the original approach of tapping a second slipstream of raw Mars air.</span>
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
-        <span class="body"><strong><code>CO2_TARGET</code>/<code>CO2_LOW</code> (4,000/3,500 kPa)</strong> in <code>atmospherics_co2supply.ic10</code> are placeholder buffer-size numbers, same as the other supply-side buffers in this build — not tuned to how fast Regulation's <code>co2Pump</code> actually draws it down. Also unverified: whether tapping the raw buffer for this pulls enough volume to keep both the CO2 buffer and the compression stage fed without starving either — the raw buffer's own vent-gating hysteresis should cover it, but it hasn't been tested with both draws active at once.</span>
+        <span class="body"><strong>Purge Valve <code>Setting=0</code> and the backup Condensation Valve behavior</strong> in <code>atmospherics_co2supply.ic10</code> are reasoned from documented community usage, not hands-on confirmation in this build. Watch for two things once running: whether <code>Setting=0</code> actually gives useful extraction speed (vs. needing a Volume Pump behind the Purge Valve to pull harder, as some players report needing), and whether the backup Condensation Valve (CV-402) is enough to stop re-condensed liquid from building pressure back up on the gas side.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong><code>CO2_TARGET</code>/<code>CO2_LOW</code> (4,000/3,500 kPa)</strong> in <code>atmospherics_co2supply.ic10</code> are placeholder buffer-size numbers, same as the other supply-side buffers in this build — not tuned to how fast Regulation's <code>co2Pump</code> actually draws it down. Also unverified: whether draining the Liquid Tank via <code>liquidPurge</code> keeps pace with demand, or drains the tank faster than Area 300 replenishes it — hasn't been tested with the whole loop running at once.</span>
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
@@ -896,32 +905,36 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_co2supply.ic10</span><span class="housing">Area 400 · CO2 Supply · 3 pins</span></div>
-      <pre>alias co2Sensor  d0   <span class="c"># Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)</span>
-alias tapValve   d1   <span class="c"># Digital Valve, bleeds raw Mars air (pre-compression) into the Filtration inlet</span>
-alias filtration d2   <span class="c"># Filtration unit, CO2 filter installed - purifies the raw bleed into the CO2 buffer</span>
+      <div class="script-tab"><span class="name">atmospherics_co2supply.ic10</span><span class="housing">Area 400 · CO2 Supply · 2 pins · source changed to reused liquid CO2 (2026-08-04)</span></div>
+      <pre>alias co2Sensor   d0   <span class="c"># Pipe Analyzer / Gas Sensor on the CO2 buffer tank (Pressure)</span>
+alias liquidPurge d1   <span class="c"># Purge Valve, drains the Area 300 Liquid Tank into the CO2 buffer as gas</span>
 
 <span class="c"># Regulation's co2Pump had no source anywhere in this build until now - it was pumping
-# against an empty supply. Raw Mars air is already >90% CO2, so this just taps a slipstream
-# of it off the same raw buffer atmospherics_intake.ic10 manages, before it gets compressed
-# and liquefied away in the collection pipeline, and purifies it through Filtration instead.
-# Placeholder buffer size, same pattern as the other supply-side buffers - tune once running.</span>
+# against an empty supply. Reuses the liquid CO2 Area 300's Condensation Valve already
+# separates out (previously just parked unused in the Liquid Tank) instead of tapping a
+# second, separate slipstream of raw Mars air - no point re-extracting CO2 from scratch
+# when the collection pipeline already condenses it out a few meters away. Setting fixed
+# at 0 for maximum extraction while On; pair with a backup Condensation Valve on the gas
+# output (passive, no pin needed) to catch anything that re-condenses before the tank -
+# community-documented failure mode if you skip it. Placeholder buffer size, same pattern
+# as the other supply-side buffers - tune once running.</span>
 define CO2_TARGET 4000
 define CO2_LOW    3500
+
+s liquidPurge Setting 0
 
 main:
 yield
 
 l r0 co2Sensor Pressure
-l r1 tapValve On
-beqz r1 tap_off
+l r1 liquidPurge On
+beqz r1 purge_off
 slt r2 r0 CO2_TARGET
-j tap_set
-tap_off:
+j purge_set
+purge_off:
 slt r2 r0 CO2_LOW
-tap_set:
-s tapValve On r2
-s filtration On r2
+purge_set:
+s liquidPurge On r2
 
 j main</pre>
     </div>
@@ -932,7 +945,7 @@ j main</pre>
       <h2>Resume here</h2>
       <span class="panel-num">next session</span>
     </div>
-    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer feeds 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing, HP line runs through exterior radiators, then a Condensation Valve into a Liquid Tank, then on into the Large Tank bank. Duplicate either housing (same sensor reading) if you have more vents/compressors than one housing's pins allow. Wire the electrolyzer to <code>atmospherics_electrolyzer.ic10</code> too, not left bare — its output network can autoignite above 300°C if H2/O2 build up together, so it gets the same don't-leave-it-unscripted treatment as the vents. Also tap <code>atmospherics_co2supply.ic10</code> off the same raw buffer — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added, which matters now that CO2 is targeted at 20% instead of 5%. Once collection is running and the status light confirms CO2 is actually condensing, feed the Large Tank bank into the shared-room Regulation stage (60/20/20 N2/O2/CO2, no split needed). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code> and the electrolyzer's <code>TEMP_TRIP</code> margin (all reasoned from player reports/wiki, not hard-verified against your actual build), and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
+    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer feeds 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing, HP line runs through exterior radiators, then a Condensation Valve into a Liquid Tank, then on into the Large Tank bank. Duplicate either housing (same sensor reading) if you have more vents/compressors than one housing's pins allow. Wire the electrolyzer to <code>atmospherics_electrolyzer.ic10</code> too, not left bare — its output network can autoignite above 300°C if H2/O2 build up together, so it gets the same don't-leave-it-unscripted treatment as the vents. Also wire <code>atmospherics_co2supply.ic10</code> to the Liquid Tank in Area 300 (Purge Valve, not a raw-air tap) — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added, which matters now that CO2 is targeted at 20% instead of 5%. Once collection is running and the status light confirms CO2 is actually condensing, feed the Large Tank bank into the shared-room Regulation stage (60/20/20 N2/O2/CO2, no split needed). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code> and the electrolyzer's <code>TEMP_TRIP</code> margin (all reasoned from player reports/wiki, not hard-verified against your actual build), and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
   </section>
 
   <footer>

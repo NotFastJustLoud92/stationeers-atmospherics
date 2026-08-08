@@ -31,8 +31,8 @@ Structures and items needed to build this system, grouped by Area (matches the [
 ## Area 400 — CO2 Supply
 | Device | Qty | Notes |
 |---|---|---|
-| Digital Valve | 1 | `tapValve` |
-| Filtration | 1 | + CO2 filter cartridge |
+| Purge Valve | 1 | `liquidPurge` — drains Area 300's Liquid Tank, reuses CO2 already condensed there instead of re-filtering raw Mars air |
+| Condensation Valve | 1 | CV-402, backup — catches gas that re-condenses before the buffer tank, passive, no pin needed |
 | Tank | 1 | CO2 buffer |
 | Pipe Analyzer | 1 | `co2Sensor` |
 | IC Housing + Integrated Circuit (IC10) | 1 | runs `atmospherics_co2supply.ic10` |
@@ -66,7 +66,7 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | Filter | Total | Goes into |
 |---|---|---|
 | O2 filter | 1 | FIL-801 |
-| CO2 filter | 2 | FIL-401, FIL-801 |
+| CO2 filter | 1 | FIL-801 |
 | Pollutant filter | 1 | FIL-802 |
 | Volatiles filter | 1 | FIL-803 |
 
@@ -76,6 +76,6 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | IC Housing + Integrated Circuit (IC10) | 1 | for `hash_id.ic10` — standing tool for reading real `PrefabHash`es |
 
 ## Totals
-- **Structures (fixed quantities): 47** — 4 Large Powered Vent, 2 Turbo Volume Pump, 4 Volume Pump, 6 Pipe Analyzer, 2 Gas Sensor, 4 Digital Valve, 2 Indicator Light, 4 Filtration, 1 Electrolyzer, 1 Condensation Valve, 1 Liquid Tank, 2 Tank, 7 IC Housing, 7 Integrated Circuit (IC10)
+- **Structures (fixed quantities): 47** — 4 Large Powered Vent, 2 Turbo Volume Pump, 4 Volume Pump, 6 Pipe Analyzer, 2 Gas Sensor, 3 Digital Valve, 2 Indicator Light, 3 Filtration, 1 Electrolyzer, 2 Condensation Valve, 1 Purge Valve, 1 Liquid Tank, 2 Tank, 7 IC Housing, 7 Integrated Circuit (IC10)
 - **Structures (variable, sized to your build)**: Large Tank (Area 300 N2/O2 bank, Area 500 O2 bank), Medium Radiator ×N (Area 200), plus pipe/cable as needed
-- **Consumables: 5 filter cartridges** across 4 Filtration units
+- **Consumables: 4 filter cartridges** across 3 Filtration units (all in Area 800 — Area 400 no longer filters, it reuses Area 300's liquid CO2)
