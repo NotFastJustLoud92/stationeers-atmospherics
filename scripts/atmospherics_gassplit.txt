@@ -1,0 +1,41 @@
+alias n2Sensor     d0   # Pipe Analyzer on TK-302 (N2 tank)
+alias filtrationN2 d1   # Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream
+alias o2Sensor     d2   # Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)
+alias filtrationO2 d3   # Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter
+
+# Area 300 used to dump N2 and O2 into one shared tank and let Regulation's two separate
+# pumps both draw from that same mixed pipe - that doesn't actually separate anything, a
+# pump just moves whatever's in the pipe, it can't selectively pull one gas out of a mix.
+# Chained an N2 filter then an O2 filter off the post-condensation gas line instead, each
+# into its own hysteresis-gated buffer/network, so Regulation's n2Pump and o2Pump each get
+# a genuinely pure supply instead of both drawing from the same bottle.
+# Placeholder buffer targets, same pattern as the other supply-side buffers - tune once running.
+define N2_TARGET 40000
+define N2_LOW    38000
+define O2_TARGET 40000
+define O2_LOW    38000
+
+main:
+yield
+
+l r0 n2Sensor Pressure
+l r1 filtrationN2 On
+beqz r1 n2_off
+slt r2 r0 N2_TARGET
+j n2_set
+n2_off:
+slt r2 r0 N2_LOW
+n2_set:
+s filtrationN2 On r2
+
+l r3 o2Sensor Pressure
+l r4 filtrationO2 On
+beqz r4 o2_off
+slt r5 r3 O2_TARGET
+j o2_set
+o2_off:
+slt r5 r3 O2_LOW
+o2_set:
+s filtrationO2 On r5
+
+j main

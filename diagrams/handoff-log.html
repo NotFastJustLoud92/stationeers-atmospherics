@@ -348,6 +348,7 @@
     <span class="chip ok"><span class="dot"></span>COLLECTION STAGE — REDESIGNED FOR SCALE (2026-08-02)</span>
     <span class="chip issue"><span class="dot"></span>VENT OVERPRESSURE BUG — FIXED, UNTESTED IN-GAME</span>
     <span class="chip ok"><span class="dot"></span>P&amp;ID REV B — SIMPLIFIED, DEVICE LABELS CORRECTED (2026-08-04)</span>
+    <span class="chip ok"><span class="dot"></span>N2/O2 SPLIT STORAGE + CLOSED-LOOP RECAPTURE (2026-08-07)</span>
   </div>
 
   <section class="panel">
@@ -365,8 +366,8 @@
         <tbody>
           <tr>
             <td><span class="swatch" style="background:#8fa0a6"></span>Mars Intake <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 100/200</span></td>
-            <td class="mono">Powered Vent (L) → Raw Tank → Turbo Volume Pump → HP Tank</td>
-            <td>Harvest + compress raw Mars air to ~3500 kPa</td>
+            <td class="mono">Powered Vent (L) → Raw Tank (Insulated) → Turbo Volume Pump → HP Tank</td>
+            <td>Harvest + compress raw Mars air to ~3500 kPa. Raw buffer is now a single <strong>Large Tank (Insulated)</strong>, 50,000 L (2026-08-07) — insulation keeps its pressure from swinging with exterior temperature.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#5a8fd6"></span>Cooling <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 200/300</span></td>
@@ -374,29 +375,29 @@
             <td>Condense CO2 to liquid via phase change</td>
           </tr>
           <tr>
-            <td><span class="swatch" style="background:#45c2a1"></span>N2+O2 Buffer <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 300</span></td>
-            <td class="mono">Tank bank</td>
-            <td>Holds CO2-stripped Mars gas (~66/33 N2/O2 blend)</td>
+            <td><span class="swatch" style="background:#45c2a1"></span>N2/O2 Split <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 300</span></td>
+            <td class="mono">Filtration (N2) → N2 tank; Filtration (O2) → Area 500's O2 tank bank</td>
+            <td>NEW (2026-08-07), Area 300 is now IC-controlled, not passive. Used to dump N2+O2 into one shared tank with two pumps drawing from the same mixed pipe — that doesn't actually separate anything. Now each gas gets its own hysteresis-gated buffer. See <code>atmospherics_gassplit.ic10</code> below.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#e0a244"></span>O2 Supply <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 500</span></td>
-            <td class="mono">Electrolyzer (ice-fed) + O2 Tanks</td>
-            <td>Independent O2 source, not Mars-derived. IC-gated (2026-08-02) — see <code>atmospherics_electrolyzer.ic10</code> below.</td>
+            <td class="mono">Electrolyzer (ice-fed) + O2 Tank bank</td>
+            <td>Now a shared buffer fed by three sources: the electrolyzer (ice-fed, unchanged manual haul), Area 300's collected O2, and Area 800's recaptured O2. IC-gated (2026-08-02) — see <code>atmospherics_electrolyzer.ic10</code> below.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#5fc77e"></span>CO2 Supply <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 400</span></td>
             <td class="mono">Purge Valve (reuses Area 300's liquid CO2) + CO2 buffer tank</td>
-            <td>NEW (2026-08-02), source changed 2026-08-04 — feeds Regulation's <code>co2Pump</code>, which otherwise has no source. See <code>atmospherics_co2supply.ic10</code> below.</td>
+            <td>NEW (2026-08-02), source changed 2026-08-04 — feeds Regulation's <code>co2Pump</code>, which otherwise has no source. Also receives recaptured CO2 from Area 800. See <code>atmospherics_co2supply.ic10</code> below.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#b08ee0"></span>Regulation <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 600</span></td>
             <td class="mono">Gas Sensor + 3× Volume Pump</td>
-            <td>Actively holds 60/20/20 N2/O2/CO2 in the shared output</td>
+            <td>Actively holds 60/20/20 N2/O2/CO2 in the shared output. The <strong>only</strong> thing that ever adds gas to the room (2026-08-07) — Recapture no longer returns anything to the room directly.</td>
           </tr>
           <tr>
             <td><span class="swatch" style="background:#e2695a"></span>Recapture Loop <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 800</span></td>
-            <td class="mono">Recycle Pump → 3× Filtration (O2+CO2 / Pollutant / Volatiles)</td>
-            <td>CO2 skimmed above 20%; Pollutant &amp; Volatiles filtered on any presence — see <code>atmospherics_recapture.ic10</code> below.</td>
+            <td class="mono">Recycle Pump → 5× Filtration (O2 / CO2 / N2 / Pollutant / Volatiles), 2 IC housings</td>
+            <td>Rebuilt 2026-08-07: O2, CO2, and N2 each route to their own tank; Pollutant &amp; Volatiles vent to exterior. No more return-to-room path. Split across <code>atmospherics_recapture.ic10</code> (main) + <code>atmospherics_recapture_riders.ic10</code> (companion) — 7 devices needs more pins than one housing has.</td>
           </tr>
         </tbody>
       </table>
@@ -455,6 +456,14 @@
         <span class="tag done">Simplified</span>
         <span class="body"><strong>Liquid CO2 separation is now a passive device, not scripted logic.</strong> The <strong>Condensation Valve</strong> does one-way, automatic drainage of any liquid phase out of a gas pipe into a liquid pipe network — no On/Off, no IC10 interface at all (its control mode is manual/passive by design, confirmed via community sources). Plumb it directly into the cooled HP line with its liquid side running to a Liquid Tank, and it separates CO2 the moment it condenses. This is strictly more reliable than a temperature-gated Digital Valve guessing at a threshold — it reacts to the actual physical phase, not a sensor reading of it.</span>
       </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>N2 and O2 no longer share one tank — Area 300 split into two IC-gated outputs, and the raw/liquid buffers went insulated.</strong> Ryan asked for both directly: separate storage for the Mars-collected N2 and O2 instead of one combined bank, and <strong>Large Tank (Insulated)</strong> / <strong>Large Liquid Tank (Insulated)</strong> for the raw Mars-air buffer (TK-101, ×1) and the liquid CO2 tanks (TK-301, ×2) respectively — both real Stationeers structures, built from insulated kits, confirmed via web search. Area 300 is no longer passive: <code>atmospherics_gassplit.ic10</code> chains an N2 filter then an O2 filter off the post-condensation gas line, each into its own hysteresis-gated output (N2 → its own tank, O2 → Area 500's O2 tank bank). The previous single "N2/O2 ≈66/33" tank bank fed both of Regulation's <code>n2Pump</code> and <code>o2Pump</code> off the same mixed pipe, which doesn't actually work — a pump can't selectively pull one gas out of a mix.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Recapture (Area 800) now sorts N2 too, and nothing it captures goes back to the room directly.</strong> Ryan's direction: any gas Recapture pulls out of the room air should be filtered and returned to its own storage tank, and the <em>only</em> path back into the room atmosphere should be Regulation's three pumps. Added a fifth filter (N2, → Area 300's TK-302) and removed the old "scrubbed remainder → back to Area 700" bus entirely — O2/CO2/N2 each route to their tank, Pollutant/Volatiles vent to exterior, and there's nothing left over to return. This pushed the loop to 7 controlled devices (1 sensor + 1 pump + 5 filters), over one IC housing's 6-pin limit, so it's now split across <code>atmospherics_recapture.ic10</code> (the real decision logic: sensor, pump, CO2/Pollutant/Volatiles) and a new companion <code>atmospherics_recapture_riders.ic10</code> (3 pins, just mirrors the pump's On state onto the O2 and N2 filters — same "duplicate the housing" pattern used elsewhere in this build rather than reaching for HASH()-based batch addressing).</span>
+      </li>
     </ul>
 
     <hr class="rule">
@@ -473,8 +482,8 @@
           </tr>
           <tr>
             <td>Raw buffer</td>
-            <td class="mono">Pipe network (+ optional small tank)</td>
-            <td>Pools vent output for the Turbo Volume Pumps to draw from; pressure read by <code>atmospherics_intake.ic10</code>.</td>
+            <td class="mono">1× Large Tank (Insulated), 50,000 L</td>
+            <td>Pools vent output for the Turbo Volume Pumps to draw from; pressure read by <code>atmospherics_intake.ic10</code>. Insulated (2026-08-07) so its pressure doesn't swing with exterior temperature.</td>
           </tr>
           <tr>
             <td>Compression</td>
@@ -493,13 +502,13 @@
           </tr>
           <tr>
             <td>Liquid CO2</td>
-            <td class="mono">Liquid Tank</td>
-            <td>None directly — this is the source the CO2 supply branch below draws from, not just parked byproduct.</td>
+            <td class="mono">2× Large Liquid Tank (Insulated)</td>
+            <td>None directly — this is the source the CO2 supply branch below draws from, not just parked byproduct. Insulated, 2 tanks (2026-08-07) so the liquid doesn't warm and re-vaporize before it's drawn off.</td>
           </tr>
           <tr>
-            <td>Storage</td>
-            <td class="mono">Large Tank bank (manifolded off HP network)</td>
-            <td>None — fills passively; its pressure is what the compression script reads.</td>
+            <td>N2/O2 split</td>
+            <td class="mono">Filtration (N2) → N2 tank; Filtration (O2) → Area 500's O2 tank bank</td>
+            <td><code>atmospherics_gassplit.ic10</code> — hysteresis on each output network's own pressure. NEW (2026-08-07): replaces the old single combined N2/O2 tank, which two separate pumps couldn't actually draw pure gas from.</td>
           </tr>
           <tr>
             <td>CO2 supply (branch)</td>
@@ -510,7 +519,7 @@
       </table>
     </div>
 
-    <p class="muted" style="margin-top:14px;">Output of this pipeline is CO2-stripped ≈66/33 N2/O2 gas in the Large Tank bank — not yet a breathable mix (no O2 boost, no active regulation, and no CO2 — that has to come from the separate CO2 supply Regulation pumps in). Route the tank bank into the Regulation stage below, which targets 60/20/20 N2/O2/CO2 (resolved 2026-08-02 — see Room &amp; Target above).</p>
+    <p class="muted" style="margin-top:14px;">Output of this pipeline is CO2-stripped ≈66/33 N2/O2 gas, now split into a dedicated N2 tank and Area 500's O2 tank bank (2026-08-07) rather than one combined tank — not yet a breathable mix on its own (still needs Regulation's active blending, plus CO2 from the separate CO2 supply). Route both tanks into the Regulation stage below, which targets 60/20/20 N2/O2/CO2 (resolved 2026-08-02 — see Room &amp; Target above).</p>
   </section>
 
   <section class="panel">
@@ -532,6 +541,7 @@
       <li class="source-item"><strong>Electrolyzer autoignition risk.</strong> If the electrolyzer's output network (where H2 and O2 share a pipe before being split off) rises above 300°C (573K), the mix autoignites — converts the O2/H2 to steam and causes further electrolyzer output to autocombust too. This is why the electrolyzer isn't left unscripted like the old O2 Supply description implied: <code>atmospherics_electrolyzer.ic10</code> below trips a safety vent + shuts the unit off well before that threshold.<span class="src">Stationeers Community Wiki</span></li>
       <li class="source-item"><strong>Radiator type matters for the Area 200 cooling stage.</strong> <strong>Medium Convection Radiator</strong> exchanges heat with the surrounding atmosphere through a grill — it has "no use in a vacuum." <strong>Medium Radiator</strong> (radiative, non-convection) radiates heat directly into space and works with no atmosphere present. Area 200's radiators sit exterior, dumping heat into Mars' thin atmosphere to condense CO2 — that's the radiative device, not the Convection one, which would do close to nothing out there.<span class="src">Stationeers Community Wiki (Medium Radiator) + stationeering.substack.com, Life Support III: Radiative Cooling</span></li>
       <li class="source-item"><strong>Purge Valve recovers gas from a liquid tank on purpose</strong> — this is a documented, commonly-used pattern, not a workaround. Draining existing gas headspace from a liquid line drops local pressure, which pushes more of the liquid to evaporate to refill it; setting the Purge Valve's pressure limit toward 0 makes this aggressive. The known failure mode: evaporated gas can "leak through" the Purge Valve and re-condense on the gas side, so the standard fix is a Condensation Valve immediately after it (opposite direction from the main one) draining any re-condensed liquid back to the liquid line, to prevent pipe ruptures. This is what <code>atmospherics_co2supply.ic10</code> below now does with Area 300's liquid CO2 instead of tapping raw Mars air a second time.<span class="src">Stationeers Community Wiki (Purge Valve) + Steam Community discussions ("How to pump out gas from a liquid tank?")</span></li>
+      <li class="source-item"><strong>Insulated tank variants are real, separate structures</strong> — <strong>Large Tank (Insulated)</strong> and <strong>Large Liquid Tank (Insulated)</strong> are built from insulated tank kits (<code>Kit (Tank Insulated)</code> / <code>ItemKitLiquidTankInsulated</code>) rather than the standard kits, same 50,000 L capacity and ~60,000 kPa burst as the non-insulated version. Insulation only affects heat transfer with the surrounding environment, not pressure rating — useful here for keeping the Mars-air raw buffer's pressure from swinging with exterior temperature, and for keeping the liquid CO2 tanks from warming enough to re-vaporize their contents before the Purge Valve can draw them off.<span class="src">Stationeers Community Wiki (Tank) + Steam Community discussions</span></li>
     </ul>
     <p class="muted" style="margin-top:14px;">One source (a Substack "Thermal Conditioning &amp; Gas Separation" guide) surfaced oddly-named devices ("TEC-V", "PGL filtration") that don't match any known vanilla Stationeers device — likely a heavily-modded build or a bad fetch/summary. Its specific numbers (293–303K window, 13.79 kPa/K ratio, 48,636 kPa max) were <strong>not</strong> used anywhere in this design; treat that source as unreliable.</p>
   </section>
@@ -590,16 +600,24 @@
         <span class="tag open">Untested</span>
         <span class="body">Neither the original three-housing design nor the new <code>atmospherics_compression.ic10</code> have been run in-game yet. First real test will surface anything a review missed — particularly whether 1–2 Turbo Volume Pumps per housing keep up with N Large Powered Vents' worth of intake, and whether the radiator run is long enough to hit <code>COND_TEMP_MAX</code> before the gas reaches the Condensation Valve.</span>
       </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong><code>N2_TARGET</code>/<code>N2_LOW</code> and <code>O2_TARGET</code>/<code>O2_LOW</code> (40,000/38,000 kPa each)</strong> in the new <code>atmospherics_gassplit.ic10</code> are placeholder buffer-size numbers, same pattern as every other supply-side buffer in this build — not tuned to how fast the two filters actually produce N2/O2 or how fast Regulation and Recapture draw them back down.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong>Cross-housing pin reads in the new Area 800 pair haven't been confirmed in-game.</strong> <code>atmospherics_recapture_riders.ic10</code>'s <code>pumpState</code> (d0) is wired to the same physical <code>PU-801</code> that <code>atmospherics_recapture.ic10</code> writes to via its own d1 — reading a device's current state from a second IC housing's pin should just work (each pin is its own cable to the device), but this exact two-housing-reading-one-actuator pattern hasn't been used elsewhere in this build before. Confirm the rider housing's O2/N2 filters actually track the main housing's pump state once both are wired up.</span>
+      </li>
     </ul>
   </section>
 
   <section class="panel">
     <div class="panel-head">
       <h2>IC10 Scripts</h2>
-      <span class="panel-num">7 independent housings, 1 superseded</span>
+      <span class="panel-num">9 independent housings, 1 superseded</span>
     </div>
 
-    <p class="muted">Full copies live in <code>../scripts/</code> in this repo (originals: <code>Desktop\Stationeers IC10 Scripts\</code> on the build machine). A separate diagnostic script, <code>hash_id.ic10</code>, is also in that folder — wire any unknown device to it and read its real <code>PrefabHash</code> directly instead of guessing a <code>HASH("...")</code> string. Each housing below is tagged with its Area number, matching the companion <strong>P&amp;ID</strong> (Rev B, 2026-08-04) — cross-reference a device's tag there (e.g. <code>PA-201</code>) back to its pin here the same way.</p>
+    <p class="muted">Saved as plain <code>.txt</code> files in <code>Desktop\Stationeers IC10 Scripts\</code>. A separate diagnostic script, <code>hash_id.ic10</code>, is also in that folder — wire any unknown device to it and read its real <code>PrefabHash</code> directly instead of guessing a <code>HASH("...")</code> string. Each housing below is tagged with its Area number, matching the companion <strong>P&amp;ID</strong> (Rev B, 2026-08-04) — cross-reference a device's tag there (e.g. <code>PA-201</code>) back to its pin here the same way.</p>
 
     <div class="script">
       <div class="script-tab"><span class="name">atmospherics_intake.ic10</span><span class="housing">Area 100 · Vent gating · 6 pins, zero HASH() calls</span></div>
@@ -705,6 +723,52 @@ s statusLight On r6
 j main</pre>
     </div>
 
+    <div class="script">
+      <div class="script-tab"><span class="name">atmospherics_gassplit.ic10</span><span class="housing">Area 300 · N2/O2 split · 4 pins · NEW (2026-08-07) — Area 300 is no longer passive</span></div>
+      <pre>alias n2Sensor     d0   <span class="c"># Pipe Analyzer on TK-302 (N2 tank)</span>
+alias filtrationN2 d1   <span class="c"># Filtration unit, N2 filter - splits N2 out of the post-CV-301 gas stream</span>
+alias o2Sensor     d2   <span class="c"># Pipe Analyzer on the O2 output line (shared network feeding Area 500's TK-501)</span>
+alias filtrationO2 d3   <span class="c"># Filtration unit, O2 filter - splits O2 out of what's left after the N2 filter</span>
+
+<span class="c"># Area 300 used to dump N2 and O2 into one shared tank and let Regulation's two
+# separate pumps both draw from that same mixed pipe - that doesn't actually separate
+# anything, a pump just moves whatever's in the pipe, it can't selectively pull one
+# gas out of a mix. Chained an N2 filter then an O2 filter off the post-condensation
+# gas line instead, each into its own hysteresis-gated buffer/network, so Regulation's
+# n2Pump and o2Pump each get a genuinely pure supply instead of both drawing from the
+# same bottle. Placeholder buffer targets, same pattern as the other supply-side
+# buffers - tune once running.</span>
+define N2_TARGET 40000
+define N2_LOW    38000
+define O2_TARGET 40000
+define O2_LOW    38000
+
+main:
+yield
+
+l r0 n2Sensor Pressure
+l r1 filtrationN2 On
+beqz r1 n2_off
+slt r2 r0 N2_TARGET
+j n2_set
+n2_off:
+slt r2 r0 N2_LOW
+n2_set:
+s filtrationN2 On r2
+
+l r3 o2Sensor Pressure
+l r4 filtrationO2 On
+beqz r4 o2_off
+slt r5 r3 O2_TARGET
+j o2_set
+o2_off:
+slt r5 r3 O2_LOW
+o2_set:
+s filtrationO2 On r5
+
+j main</pre>
+    </div>
+
     <div class="script superseded">
       <div class="script-tab"><span class="name">atmospherics_intake_compression.ic10</span><span class="housing">SUPERSEDED · kept for reference · CO2-drain branch is dead code, "Compressor" isn't a real device either (see above)</span></div>
       <pre>alias hpSensor   d0   <span class="c"># Pipe Analyzer on HP Tank line (Pressure)</span>
@@ -805,14 +869,26 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop · 5 pins · Pollutant/Volatiles filtration added (2026-08-04)</span></div>
+      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop, main housing · 5 pins · O2/N2 split out to a companion housing (2026-08-07)</span></div>
       <pre>alias sensor              d0   <span class="c"># Gas Sensor, shared room</span>
 alias recyclePump         d1   <span class="c"># Volume Pump, pulls room air into the filtration manifold</span>
-alias filtrationCO2       d2   <span class="c"># Filtration unit, O2 + CO2 filters installed</span>
-alias filtrationPollutant d3   <span class="c"># Filtration unit, Pollutant filter installed</span>
-alias filtrationVolatiles d4   <span class="c"># Filtration unit, Volatiles filter installed</span>
+alias filtrationCO2       d2   <span class="c"># Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401</span>
+alias filtrationPollutant d3   <span class="c"># Filtration unit, Pollutant filter - captured gas vented to exterior</span>
+alias filtrationVolatiles d4   <span class="c"># Filtration unit, Volatiles filter - captured gas vented to exterior</span>
 
-<span class="c"># CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
+<span class="c"># Every gas this loop touches goes to a tank now, not back into the room - the only
+# thing that ever adds gas to the room atmosphere is Regulation's three pumps
+# (atmospherics_regulation.ic10). That's why there's no "remainder" path here anymore:
+# whatever this pump pulls in gets fully sorted - O2, CO2, and N2 each to their own
+# tank, Pollutant and Volatiles vented to exterior.
+#
+# O2 and N2 are controlled by a companion housing (atmospherics_recapture_riders.ic10),
+# not this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor,
+# pump, and 5 filters), so it's split in two. The rider housing just mirrors this
+# housing's recyclePump On state onto the O2 and N2 filters; all the real decision
+# logic lives here.
+#
+# CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
 # only the excess above target gets skimmed. Pollutant and Volatiles have no target at
 # all though - there's no "acceptable" amount of either, so those two just trigger on
 # bare presence (ratio > 0), no hysteresis band to hover near.</span>
@@ -843,11 +919,37 @@ l r6 sensor RatioVolatiles
 sgt r7 r6 0
 s filtrationVolatiles On r7
 
-<span class="c"># Pump runs whenever any one of the three filters needs to - OR via max, since each
-# flag is 0/1</span>
+<span class="c"># Pump runs whenever any one of the three triggers above is active</span>
 max r8 r3 r5
 max r8 r8 r7
 s recyclePump On r8
+
+j main</pre>
+    </div>
+
+    <div class="script">
+      <div class="script-tab"><span class="name">atmospherics_recapture_riders.ic10</span><span class="housing">Area 800 · Recapture loop, companion housing · 3 pins · NEW (2026-08-07)</span></div>
+      <pre>alias pumpState    d0   <span class="c"># reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to</span>
+alias filtrationO2 d1   <span class="c"># Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank</span>
+alias filtrationN2 d2   <span class="c"># Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302</span>
+
+<span class="c"># O2 and N2 have no trigger of their own - whenever the main recapture housing turns
+# the pump on (CO2 excess, or any Pollutant/Volatiles present), these two ride along
+# and recover whatever O2 and N2 are in that same slipstream back to their tanks
+# instead of letting them flow back into the room. Regulation re-doses the room from
+# those tanks on its own schedule, so this is recycling, not a net loss - it's also
+# why nothing here needs its own room sensor, just a read on the pump's current state.
+#
+# This is the companion to atmospherics_recapture.ic10, split out because one IC
+# housing only has 6 pins and the full recapture loop (sensor, pump, 5 filters) needs
+# 7 devices.</span>
+
+main:
+yield
+
+l r0 pumpState On
+s filtrationO2 On r0
+s filtrationN2 On r0
 
 j main</pre>
     </div>
@@ -945,7 +1047,7 @@ j main</pre>
       <h2>Resume here</h2>
       <span class="panel-num">next session</span>
     </div>
-    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer feeds 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing, HP line runs through exterior radiators, then a Condensation Valve into a Liquid Tank, then on into the Large Tank bank. Duplicate either housing (same sensor reading) if you have more vents/compressors than one housing's pins allow. Wire the electrolyzer to <code>atmospherics_electrolyzer.ic10</code> too, not left bare — its output network can autoignite above 300°C if H2/O2 build up together, so it gets the same don't-leave-it-unscripted treatment as the vents. Also wire <code>atmospherics_co2supply.ic10</code> to the Liquid Tank in Area 300 (Purge Valve, not a raw-air tap) — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added, which matters now that CO2 is targeted at 20% instead of 5%. Once collection is running and the status light confirms CO2 is actually condensing, feed the Large Tank bank into the shared-room Regulation stage (60/20/20 N2/O2/CO2, no split needed). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code> and the electrolyzer's <code>TEMP_TRIP</code> margin (all reasoned from player reports/wiki, not hard-verified against your actual build), and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
+    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive) — an N2 filter then an O2 filter, each into its own tank/network, instead of one combined bank. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Wire the electrolyzer to <code>atmospherics_electrolyzer.ic10</code> too, not left bare — its output network can autoignite above 300°C if H2/O2 build up together. Wire <code>atmospherics_co2supply.ic10</code> to the Liquid Tanks in Area 300 (Purge Valve, not a raw-air tap) — Regulation's <code>co2Pump</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is now <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (sensor, pump, CO2/Pollutant/Volatiles) plus a new companion <code>atmospherics_recapture_riders.ic10</code> (O2/N2, mirrors the main housing's pump state) — since the loop grew to 7 devices once N2 recovery was added and nothing returns to the room directly anymore; wire both. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and Area 500's O2 tank bank into the shared-room Regulation stage (60/20/20 N2/O2/CO2). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, the electrolyzer's <code>TEMP_TRIP</code> margin, the new <code>atmospherics_gassplit.ic10</code> buffer targets, whether the rider housing actually tracks the main housing's pump state, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
   </section>
 
   <footer>
