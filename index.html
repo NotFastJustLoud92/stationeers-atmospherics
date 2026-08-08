@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stationeers Atmospherics — Cragspire Station</title>
+<style>
+  :root{
+    --bg:#0d1114;
+    --panel:#151a1e;
+    --border:#2b3339;
+    --border-strong:#3d474e;
+    --text:#e8edea;
+    --text-muted:#8fa0a6;
+    --text-faint:#5f6d72;
+    --accent:#e0a244;
+    --accent-soft:#332711;
+    --teal:#45c2a1;
+    --teal-soft:#0f2b24;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    background-image:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(224,162,68,0.05), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(69,194,161,0.05), transparent);
+  }
+  .wrap{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width: 7px; height: 7px;
+    background: var(--teal);
+    box-shadow: 0 0 0 3px var(--teal-soft);
+    flex-shrink: 0;
+  }
+  h1{
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  p.lead{
+    color: var(--text-muted);
+    font-size: 15px;
+    max-width: 60ch;
+    margin: 0 0 40px;
+  }
+  .links{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  a.card{
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s ease;
+  }
+  a.card:hover, a.card:focus-visible{
+    border-color: var(--border-strong);
+    outline: none;
+  }
+  a.card:focus-visible{
+    border-color: var(--accent);
+  }
+  .card .name{
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .card .desc{
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+  .card .tag{
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: 2px;
+  }
+  footer{
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+  footer a{ color: var(--text-faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Cragspire Station · Mars2 / Hellas Crags</div>
+  <h1>Stationeers Atmospherics</h1>
+  <p class="lead">Mars-air collection, CO2 phase-change liquefaction, O2/CO2 supply buffers, room regulation, and CO2 recapture — fully IC10-scripted and sectioned by control housing. Status: designed, not yet run in-game.</p>
+
+  <div class="links">
+    <a class="card" href="diagrams/pid.html">
+      <div class="name">Process &amp; Instrumentation Diagram<span class="tag">Rev B</span></div>
+      <div class="desc">Eight numbered process areas, every device tagged with its real in-game name and IC10 pin.</div>
+    </a>
+    <a class="card" href="diagrams/handoff-log.html">
+      <div class="name">Handoff Log</div>
+      <div class="desc">Room target, design decisions, researched facts with sources, open items, and the full IC10 script listing.</div>
+    </a>
+    <a class="card" href="https://github.com/NotFastJustLoud92/stationeers-atmospherics/blob/master/BOM.md">
+      <div class="name">Bill of Materials</div>
+      <div class="desc">Every structure and item needed, by Area, with quantities and a running total.</div>
+    </a>
+    <a class="card" href="https://github.com/NotFastJustLoud92/stationeers-atmospherics">
+      <div class="name">Repository</div>
+      <div class="desc">Source, IC10 scripts, and full history on GitHub.</div>
+    </a>
+  </div>
+
+  <footer>
+    Cragspire · Mars2 · Hellas Crags — snapshot, not live game state
+  </footer>
+</div>
+</body>
+</html>
