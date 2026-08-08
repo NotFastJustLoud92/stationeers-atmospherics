@@ -350,6 +350,7 @@
     <span class="chip ok"><span class="dot"></span>P&amp;ID REV B — SIMPLIFIED, DEVICE LABELS CORRECTED (2026-08-04)</span>
     <span class="chip ok"><span class="dot"></span>N2/O2 SPLIT STORAGE + CLOSED-LOOP RECAPTURE (2026-08-07)</span>
     <span class="chip ok"><span class="dot"></span>ICE CRUSHER GAS PRODUCTION + RELIEF VALVES ON EVERY TANK (2026-08-07)</span>
+    <span class="chip ok"><span class="dot"></span>POLLUTANT/METHANE/HYDROGEN CAPTURED, NOT VENTED (2026-08-07)</span>
   </div>
 
   <section class="panel">
@@ -397,8 +398,8 @@
           </tr>
           <tr>
             <td><span class="swatch" style="background:#e2695a"></span>Recapture Loop <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 800</span></td>
-            <td class="mono">Recycle Pump → 5× Filtration (O2 / CO2 / N2 / Pollutant / Volatiles), 2 IC housings</td>
-            <td>Rebuilt 2026-08-07: O2, CO2, and N2 each route to their own tank; Pollutant &amp; Volatiles vent to exterior. No more return-to-room path. Split across <code>atmospherics_recapture.ic10</code> (main) + <code>atmospherics_recapture_riders.ic10</code> (companion) — 7 devices needs more pins than one housing has.</td>
+            <td class="mono">Recycle Pump → 5× Filtration (O2 / CO2 / N2 / Pollutant / Methane+Hydrogen), 2 IC housings</td>
+            <td>Rebuilt 2026-08-07, extended 2026-08-07: O2, CO2, and N2 each route to their own supply tank; Pollutant and Methane+Hydrogen (one Filtration unit, two cartridges) now route to dedicated storage tanks instead of venting — Volatile Ice safety contingency, see below. No return-to-room path at all. Split across <code>atmospherics_recapture.ic10</code> (main) + <code>atmospherics_recapture_riders.ic10</code> (companion) — 7 devices needs more pins than one housing has.</td>
           </tr>
         </tbody>
       </table>
@@ -485,6 +486,10 @@
         <span class="tag done">2026-08-07</span>
         <span class="body"><strong>Emergency buffer tank added to Area 800's room-air intake.</strong> Ryan added a passive tank on the "blue line" (the shared intake feeding both Recapture and the Ice Crusher branch) as a reserve of room air in case the base depressurizes for any reason. Purely passive, no IC10 pins — just physical volume sitting on the intake line.</span>
       </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-07</span>
+        <span class="body"><strong>Pollutant and Methane/Hydrogen now captured to storage tanks instead of vented — a Volatile Ice safety contingency.</strong> Ryan's actual tank layout has dedicated storage for CO2, O2, N2, Pollutants, N2O, and a combined mix tank for Methane + Hydrogen — the last one exists because Volatile Ice melts into Methane + Hydrogen if it ends up inside the base (hauled in, dropped, whatever happens), and neither gas belongs in the room atmosphere. Rule: any Pollutant, Methane, or Hydrogen reading at all should trigger scrubbing until it clears, same bare-presence pattern already used for Pollutant, now covering Methane and Hydrogen too — each filter only turns on for its own gas(es), not just because the pump happens to be running. Confirmed along the way: "Volatiles" was renamed to "Methane" in a game update (same gas, same <code>RatioVolatiles</code> logic now reads as <code>RatioMethane</code>), and Hydrogen is a genuinely separate gas type that had no handling anywhere in this build until now — the old Electrolyzer's H2 byproduct was just vented, and that housing is gone. <code>filtrationMethaneH2</code> is one Filtration unit with both cartridges loaded (multiple cartridges in one unit mix their catch together, which is exactly what's wanted here since both go to the same mix tank).</span>
+      </li>
     </ul>
 
     <hr class="rule">
@@ -566,6 +571,8 @@
       <li class="source-item"><strong>Ice Crusher processes Oxite and Nitrice into gas, not just liquid.</strong> It has two output ports — gas (top, yellow pipe) and liquid (bottom, blue pipe) — and its crush speed is controlled by a <code>Setting</code> parameter (Kelvin) writable via IC10, same as an On/Off logic type for gating. Oxite crushes into roughly <strong>90% O2 / 10% N2</strong> — not pure oxygen, has to be filtered same as everything else in this build.<span class="src">Stationeers Community Wiki (Ice Crusher, Ice (Oxite))</span></li>
       <li class="source-item"><strong>N2O's in-game triple point is around −21°C</strong>, confirmed directly from the Stationpedia phase-change graph (not just community sources) — well warmer than CO2's 218K/−55°C. That means N2O's liquid region opens up at far lower pressure/higher temperature than anything else piped in this build; a pressure that would keep CO2 comfortably gaseous will condense N2O. The graph's exact curve shape (how much pressure headroom exists at a given temperature above the triple point) wasn't fully read off the screenshot — treat as directional until confirmed against a live Pipe Analyzer reading once the branch is built.<span class="src">In-game Stationpedia phase graph, screenshot-confirmed by Ryan</span></li>
       <li class="source-item"><strong>Liquid Digital Valve is a real, separate device from the regular (gas-side) Digital Valve</strong> — confirmed directly by Ryan after this was flagged as an open question. Used for TK-301's relief valve since that tank sits on a liquid pipe network, not a gas one.<span class="src">Confirmed directly by Ryan</span></li>
+      <li class="source-item"><strong>"Volatiles" was renamed to "Methane" in a game update; Hydrogen is a separate gas type entirely.</strong> Full in-game gas enum: Oxygen, Nitrogen, Carbon Dioxide, Volatiles/Methane, Pollutant, Water, Nitrous Oxide, plus liquid variants of each, and Hydrogen/Liquid Hydrogen (added separately — combusts into pure water when reacting with oxygen, used as rocket fuel). Confirms Methane and Hydrogen are two distinct gases, not two names for the same thing — matters here because <code>atmospherics_recapture.ic10</code>'s old <code>filtrationVolatiles</code> only ever handled Methane; Hydrogen needed its own filter cartridge added to the same unit.<span class="src">StationeersLua enum docs (orbitalfoundrymodteam.github.io), Filtration wiki page</span></li>
+      <li class="source-item"><strong>Volatile Ice melts into Methane + Hydrogen gas.</strong> Same ice-mining family as Oxite (→O2/N2) and Nitrice (→N2O) — each ice type breaks down into a specific gas pair when processed or melted. If Volatile Ice ends up inside the base (a real hazard: hauled in on a haulage run, dropped, carried through an airlock), it releases both gases directly into the room atmosphere — this is why Ryan wants Recapture to treat any Methane or Hydrogen reading the same way it already treats Pollutant, as something to scrub immediately rather than tolerate.<span class="src">Confirmed directly by Ryan; Ice (Oxite)/Ice Crusher wiki entries for the broader ice-type pattern</span></li>
     </ul>
     <p class="muted" style="margin-top:14px;">One source (a Substack "Thermal Conditioning &amp; Gas Separation" guide) surfaced oddly-named devices ("TEC-V", "PGL filtration") that don't match any known vanilla Stationeers device — likely a heavily-modded build or a bad fetch/summary. Its specific numbers (293–303K window, 13.79 kPa/K ratio, 48,636 kPa max) were <strong>not</strong> used anywhere in this design; treat that source as unreliable.</p>
   </section>
@@ -627,6 +634,10 @@
       <li class="check-item">
         <span class="tag verify">Verify</span>
         <span class="body"><strong>Relief valve thresholds added 2026-08-07</strong> (<code>N2_RELIEF_HIGH</code>/<code>O2_RELIEF_HIGH</code> at 50,000 kPa in <code>atmospherics_gassplit.ic10</code>; <code>LIQUID_RELIEF_HIGH</code> at 4,500 kPa and <code>CO2_RELIEF_HIGH</code> at 6,000 kPa in <code>atmospherics_co2supply.ic10</code>) are all reasoned placeholders with margin under their respective burst ratings, not hands-on tuned. None of these have tripped in-game yet since nothing has been run.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag issue">Unresolved</span>
+        <span class="body"><strong>Storing Methane and Hydrogen mixed together in one tank (TK-803) hasn't been checked for a flammability/autoignition risk the way the old Electrolyzer's H2/O2 output was.</strong> The Electrolyzer's autoignition hazard specifically needed H2 <em>and</em> O2 sharing a line above 300°C — TK-803 only ever receives Methane and Hydrogen (both fuel gases, no oxidizer), so it may simply be inert without an ignition source. Not independently confirmed though. Worth a quick check of whatever the game's combustion trigger conditions actually are before treating this tank as risk-free, especially since it's meant to hold contamination from an accidental Volatile Ice melt — exactly the kind of "didn't expect gas here" scenario that caused problems earlier in this build.</span>
       </li>
       <li class="check-item">
         <span class="tag verify">Verify</span>
@@ -937,29 +948,46 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop, main housing · 5 pins · O2/N2 split out to a companion housing (2026-08-07)</span></div>
+      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop, main housing · 5 pins · added Hydrogen, Pollutant/Methane+H2 now captured not vented (2026-08-07)</span></div>
       <pre>alias sensor              d0   <span class="c"># Gas Sensor, shared room</span>
 alias recyclePump         d1   <span class="c"># Volume Pump, pulls room air into the filtration manifold</span>
 alias filtrationCO2       d2   <span class="c"># Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401</span>
-alias filtrationPollutant d3   <span class="c"># Filtration unit, Pollutant filter - captured gas vented to exterior</span>
-alias filtrationVolatiles d4   <span class="c"># Filtration unit, Volatiles filter - captured gas vented to exterior</span>
+alias filtrationPollutant d3   <span class="c"># Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank</span>
+alias filtrationMethaneH2 d4   <span class="c"># Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank</span>
 
 <span class="c"># Every gas this loop touches goes to a tank now, not back into the room - the only
 # thing that ever adds gas to the room atmosphere is Regulation's three pumps
 # (atmospherics_regulation.ic10). That's why there's no "remainder" path here anymore:
 # whatever this pump pulls in gets fully sorted - O2, CO2, and N2 each to their own
-# tank, Pollutant and Volatiles vented to exterior.
+# supply tank; Pollutant to its own storage tank; Methane and Hydrogen together into
+# one mix tank.
+#
+# "Volatiles" was renamed to "Methane" in a game update - same gas, RatioVolatiles is
+# now RatioMethane. Hydrogen is a genuinely separate gas type, not part of Methane -
+# it wasn't handled anywhere in this build before (the old Electrolyzer just vented
+# its H2 byproduct to exterior, and that housing is gone now).
+#
+# filtrationMethaneH2 is ONE Filtration unit with both a Methane filter and a Hydrogen
+# filter cartridge loaded - multiple cartridges in the same unit mix their catch
+# together, which is exactly what's wanted here since both go to the same mix tank
+# anyway. This is a safety contingency: Volatile Ice melts into Methane + Hydrogen if
+# it ends up inside the base (hauled in, dropped, whatever), and neither belongs in
+# the room atmosphere. Ryan's rule: any Pollutant, Methane, or Hydrogen reading at all
+# should trigger scrubbing until it's filtered out - same bare-presence pattern
+# already used for Pollutant. Each filter only turns on for its own gas(es) being
+# present, not just because the pump happens to be running for some other reason.
 #
 # O2 and N2 are controlled by a companion housing (atmospherics_recapture_riders.ic10),
 # not this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor,
 # pump, and 5 filters), so it's split in two. The rider housing just mirrors this
-# housing's recyclePump On state onto the O2 and N2 filters; all the real decision
-# logic lives here.
+# housing's recyclePump On state onto the O2 and N2 filters - those two ride along
+# opportunistically since O2/N2 are wanted gases, not "gas that isn't wanted" like
+# Pollutant/Methane/Hydrogen; all the real decision logic lives here.
 #
 # CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
-# only the excess above target gets skimmed. Pollutant and Volatiles have no target at
-# all though - there's no "acceptable" amount of either, so those two just trigger on
-# bare presence (ratio > 0), no hysteresis band to hover near.</span>
+# only the excess above target gets skimmed. Pollutant, Methane, and Hydrogen have no
+# target at all though - there's no "acceptable" amount of any of them, so those
+# trigger on bare presence (ratio > 0), no hysteresis band to hover near.</span>
 define CO2_HIGH 20
 define CO2_LOW  19
 
@@ -983,14 +1011,17 @@ l r4 sensor RatioPollutant
 sgt r5 r4 0
 s filtrationPollutant On r5
 
-l r6 sensor RatioVolatiles
+l r6 sensor RatioMethane
 sgt r7 r6 0
-s filtrationVolatiles On r7
+l r8 sensor RatioHydrogen
+sgt r9 r8 0
+max r7 r7 r9
+s filtrationMethaneH2 On r7
 
 <span class="c"># Pump runs whenever any one of the three triggers above is active</span>
-max r8 r3 r5
-max r8 r8 r7
-s recyclePump On r8
+max r10 r3 r5
+max r10 r10 r7
+s recyclePump On r10
 
 j main</pre>
     </div>

@@ -66,8 +66,8 @@ Structures and items needed to build this system, grouped by Area (matches the [
 |---|---|---|
 | Gas Sensor | 1 | `sensor` |
 | Volume Pump | 1 | `recyclePump` |
-| Tank | 1 | TK-801, emergency buffer — passive, no IC10 pin, reserve room air in case the base depressurizes |
-| Filtration | 5 | FIL-801 (O2), FIL-802 (CO2), FIL-803 (N2), FIL-804 (Pollutant), FIL-805 (Volatiles) — one cartridge each, no more shared units |
+| Tank | 3 | TK-801 (emergency buffer, passive, reserve room air if the base depressurizes), TK-802 (Pollutant storage), TK-803 (Methane + Hydrogen mix — Volatile Ice safety contingency) |
+| Filtration | 5 | FIL-801 (O2), FIL-802 (CO2), FIL-803 (N2), FIL-804 (Pollutant), FIL-805 (Methane + Hydrogen — one unit, two cartridges loaded) |
 | IC Housing + Integrated Circuit (IC10) | 2 | main housing runs `atmospherics_recapture.ic10`; companion runs `atmospherics_recapture_riders.ic10` — one housing only has 6 pins and this loop needs 7 devices |
 
 ## Filter cartridges (consumable items, not structures)
@@ -78,7 +78,8 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | N2O filter | 1 | FIL-503 (Area 500) |
 | CO2 filter | 1 | FIL-802 (Area 800) |
 | Pollutant filter | 1 | FIL-804 (Area 800) |
-| Volatiles filter | 1 | FIL-805 (Area 800) |
+| Methane filter | 1 | FIL-805 (Area 800) — same gas as "Volatiles," renamed in a game update |
+| Hydrogen filter | 1 | FIL-805 (Area 800) — second cartridge in the same unit as the Methane filter |
 
 ## Diagnostics
 | Device | Qty | Notes |
@@ -86,6 +87,6 @@ Structures and items needed to build this system, grouped by Area (matches the [
 | IC Housing + Integrated Circuit (IC10) | 1 | for `hash_id.ic10` — standing tool for reading real `PrefabHash`es |
 
 ## Totals
-- **Structures (fixed quantities): 71** — 4 Large Powered Vent, 5 Turbo Volume Pump, 1 Volume Pump, 10 Pipe Analyzer, 2 Gas Sensor, 6 Digital Valve, 1 Liquid Digital Valve, 1 Indicator Light, 10 Filtration, 2 Ice Crusher, 2 Condensation Valve, 1 Purge Valve, 1 Large Tank (Insulated), 2 Large Liquid Tank (Insulated), 3 Tank, 10 IC Housing, 10 Integrated Circuit (IC10)
+- **Structures (fixed quantities): 73** — 4 Large Powered Vent, 5 Turbo Volume Pump, 1 Volume Pump, 10 Pipe Analyzer, 2 Gas Sensor, 6 Digital Valve, 1 Liquid Digital Valve, 1 Indicator Light, 10 Filtration, 2 Ice Crusher, 2 Condensation Valve, 1 Purge Valve, 1 Large Tank (Insulated), 2 Large Liquid Tank (Insulated), 5 Tank, 10 IC Housing, 10 Integrated Circuit (IC10)
 - **Structures (variable, sized to your build)**: Large Tank (Area 300 N2 bank, Area 500 O2 bank), Medium Radiator ×N (Area 200), plus pipe/cable as needed
-- **Consumables: 10 filter cartridges** across 10 Filtration units (2 in Area 300 — N2/O2 split; 3 in Area 500 — O2/N2/N2O; 5 in Area 800 — Recapture)
+- **Consumables: 11 filter cartridges** across 10 Filtration units (2 in Area 300 — N2/O2 split; 3 in Area 500 — O2/N2/N2O; 5 in Area 800 — Recapture, one of which holds 2 cartridges)

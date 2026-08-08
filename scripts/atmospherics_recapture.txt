@@ -1,24 +1,41 @@
-alias sensor              d0   # Gas Sensor, shared room
-alias recyclePump         d1   # Volume Pump, pulls room air into the filtration manifold
-alias filtrationCO2       d2   # Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401
-alias filtrationPollutant d3   # Filtration unit, Pollutant filter - captured gas vented to exterior
-alias filtrationVolatiles d4   # Filtration unit, Volatiles filter - captured gas vented to exterior
+alias sensor                d0   # Gas Sensor, shared room
+alias recyclePump           d1   # Volume Pump, pulls room air into the filtration manifold
+alias filtrationCO2         d2   # Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401
+alias filtrationPollutant   d3   # Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank
+alias filtrationMethaneH2   d4   # Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank
 
 # Every gas this loop touches goes to a tank now, not back into the room - the only thing
 # that ever adds gas to the room atmosphere is Regulation's three pumps (atmospherics_
 # regulation.ic10). That's why there's no "remainder" path here anymore: whatever this pump
-# pulls in gets fully sorted - O2, CO2, and N2 each to their own tank, Pollutant and
-# Volatiles vented to exterior.
+# pulls in gets fully sorted - O2, CO2, and N2 each to their own supply tank; Pollutant to
+# its own storage tank; Methane and Hydrogen together into one mix tank.
+#
+# "Volatiles" was renamed to "Methane" in a game update - same gas, RatioVolatiles is now
+# RatioMethane. Hydrogen is a genuinely separate gas type, not part of Methane/Volatiles -
+# it wasn't handled anywhere in this build before (the old Electrolyzer just vented its H2
+# byproduct to exterior, and that housing is gone now).
+#
+# filtrationMethaneH2 is ONE Filtration unit with both a Methane filter and a Hydrogen
+# filter cartridge loaded - multiple cartridges in the same unit mix their catch together,
+# which is exactly what's wanted here since both go to the same mix tank anyway. This is
+# a safety contingency: Volatile Ice melts into Methane + Hydrogen if it ends up inside the
+# base (hauled in, dropped, whatever), and neither gas belongs in the room atmosphere.
+# Ryan's rule: any Pollutant, Methane, or Hydrogen reading at all should trigger scrubbing
+# until it's filtered out - same bare-presence pattern already used for Pollutant. Each
+# filter only turns on for its own gas(es) being present, not just because the pump happens
+# to be running for some other reason.
 #
 # O2 and N2 are controlled by a companion housing (atmospherics_recapture_riders.ic10), not
 # this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump, and
 # 5 filters), so it's split in two. The rider housing just mirrors this housing's recyclePump
-# On state onto the O2 and N2 filters; all the real decision logic lives here.
+# On state onto the O2 and N2 filters - those two ride along opportunistically since O2/N2
+# are wanted gases, not "gas that isn't wanted" like Pollutant/Methane/Hydrogen; all the real
+# decision logic lives here.
 #
 # CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%, only
-# the excess above target gets skimmed. Pollutant and Volatiles have no target at all though
-# - there's no "acceptable" amount of either, so those two just trigger on bare presence
-# (ratio > 0), no hysteresis band to hover near.
+# the excess above target gets skimmed. Pollutant, Methane, and Hydrogen have no target at
+# all though - there's no "acceptable" amount of any of them, so those trigger on bare
+# presence (ratio > 0), no hysteresis band to hover near.
 define CO2_HIGH 20
 define CO2_LOW  19
 
@@ -42,13 +59,16 @@ l r4 sensor RatioPollutant
 sgt r5 r4 0
 s filtrationPollutant On r5
 
-l r6 sensor RatioVolatiles
+l r6 sensor RatioMethane
 sgt r7 r6 0
-s filtrationVolatiles On r7
+l r8 sensor RatioHydrogen
+sgt r9 r8 0
+max r7 r7 r9
+s filtrationMethaneH2 On r7
 
 # Pump runs whenever any one of the three triggers above is active
-max r8 r3 r5
-max r8 r8 r7
-s recyclePump On r8
+max r10 r3 r5
+max r10 r10 r7
+s recyclePump On r10
 
 j main

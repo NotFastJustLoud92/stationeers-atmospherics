@@ -28,7 +28,7 @@ Open these directly in a browser (no server needed):
 | `atmospherics_icecrusher.ic10` | Area 500 — replaces the Electrolyzer (2026-08-07): Ice Crusher fed Oxite, filtered into O2 and N2, feeding the same shared tanks Area 300 uses |
 | `atmospherics_n2osupply.ic10` | Area 500 — second Ice Crusher fed Nitrice, filtered into N2O; kept at low pressure and room temperature on purpose since N2O condenses far more easily than anything else in this build |
 | `atmospherics_regulation.ic10` | Area 600 — holds the room at 60% N2 / 20% O2 / 20% CO2 @ 100 kPa via three Turbo Volume Pumps; the only thing that ever adds gas to the room |
-| `atmospherics_recapture.ic10` | Area 800, main housing — skims excess CO2 above 20%, plus Pollutant/Volatiles on any presence; everything captured goes to a tank, nothing returns to the room |
+| `atmospherics_recapture.ic10` | Area 800, main housing — skims excess CO2 above 20%, plus Pollutant and Methane+Hydrogen on any presence; everything captured goes to a storage tank, nothing returns to the room or vents to exterior |
 | `atmospherics_recapture_riders.ic10` | Area 800, companion housing — mirrors the main housing's pump state onto the O2 and N2 filters (7 devices needs more pins than one housing has) |
 | `atmospherics_intake_compression.ic10` | Superseded — kept for history, has a dead CO2-drain branch (Celsius/Kelvin bug) |
 | `hash_id.ic10` | Diagnostic — wire any unknown device to it to read its real `PrefabHash` instead of guessing |
@@ -45,4 +45,5 @@ Open these directly in a browser (no server needed):
 - N2O condenses far more easily than anything else in this build — its triple point sits around −21°C. Its supply branch is deliberately kept at low pressure and room temperature, the opposite of the CO2 line's high-pressure/cold-radiator approach.
 - Every tank in the build has its own relief valve venting to exterior. TK-301 (liquid CO2) uses a **Liquid Digital Valve**, a real, separate device from the regular gas-side Digital Valve used everywhere else.
 - Area 800 has a passive emergency buffer tank on its room-air intake, as a reserve in case the base depressurizes.
+- Pollutant and Methane/Hydrogen aren't vented in Area 800 — they're captured to dedicated storage tanks (TK-802, TK-803) instead. This is a safety contingency: Volatile Ice melts into Methane + Hydrogen if it ends up inside the base, so Recapture treats any reading of either gas (or Pollutant) as something to scrub immediately, same as it already did for Pollutant alone. "Volatiles" was renamed to "Methane" in a game update — same gas.
 - Full reasoning, sourcing, and the list of what's still unverified is in the handoff log.
