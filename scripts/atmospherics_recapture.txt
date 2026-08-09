@@ -25,17 +25,39 @@ alias filtrationMethaneH2_800 d4   # Filtration unit, BOTH Methane and Hydrogen 
 # filter only turns on for its own gas(es) being present, not just because the pump happens
 # to be running for some other reason.
 #
-# O2 and N2 are controlled by a companion housing (atmospherics_recapture_riders.ic10), not
-# this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump, and
-# 5 filters), so it's split in two. The rider housing just mirrors this housing's
-# recyclePump_800 On state onto the O2 and N2 filters - those two ride along
-# opportunistically since O2/N2 are wanted gases, not "gas that isn't wanted" like
-# Pollutant/Methane/Hydrogen; all the real decision logic lives here.
+# O2 is controlled by a companion housing (atmospherics_recapture_riders.ic10), not this one
+# - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump, and 5
+# filters), so it's split in two. O2 has no trigger of its own; its filter just mirrors this
+# housing's recyclePump_800 On state, riding along opportunistically whenever the pump is on
+# for any reason, since O2 is a wanted gas, not "gas that isn't wanted" like
+# Pollutant/Methane/Hydrogen.
+#
+# N2's Filtration unit also lives on the rider housing (filtrationN2_800r) and also just
+# mirrors the pump's On state - but as of 2026-08-09 N2 DOES get a real trigger, computed
+# right here even though the device that acts on it is on the other housing. Ryan found the
+# room sitting at ~80% N2 (vs. the 60% target) with nothing anywhere in this build actively
+# skimming an N2 surplus back down: Regulation only ever ADDS N2 (stops once at target, never
+# removes), and this housing previously only ever ran the pump for CO2 excess or
+# contamination - a pure N2 surplus with nothing else active just sat there unrecaptured
+# indefinitely. Fixed by giving N2 the same excess-hysteresis treatment CO2 already has
+# below, folded into the pump's own trigger set - once the pump turns on for N2 excess, the
+# rider housing's existing "mirror the pump" logic for filtrationN2_800r picks it up
+# automatically, no change needed on that housing at all.
 #
 # CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%, only
-# the excess above target gets skimmed. Pollutant, Methane, and Hydrogen have no target at
-# all though - there's no "acceptable" amount of any of them, so those trigger on bare
+# the excess above target gets skimmed. N2's new band works the same way, using the same
+# 60/58 target/low Regulation's own N2_TARGET/N2_LOW use, so the two subsystems agree on
+# where the equilibrium sits - Regulation stops adding at 60, Recapture starts skimming above
+# 60, both settle back to inactive between 58 and 60. Pollutant, Methane, and Hydrogen still
+# have no target at all - no "acceptable" amount of any of them, so those trigger on bare
 # presence (ratio > 0), no hysteresis band to hover near.
+#
+# N2's hysteresis memory (r12 below) is a bare register, not a device's own On state, unlike
+# every other hysteresis check in this build - the device that actually acts on this trigger
+# (filtrationN2_800r) lives on the rider housing and isn't wired to any pin here, so there's
+# no local device state to read back. Registers persist across yield/j main loop iterations
+# same as any other IC10 program, so r12 works fine as this housing's own memory of whether
+# N2 was in its "on" phase last tick.
 #
 # Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
 # share one network, so alias names need to be globally unique, not just unique within a
@@ -43,6 +65,9 @@ alias filtrationMethaneH2_800 d4   # Filtration unit, BOTH Methane and Hydrogen 
 # gets "_800r".
 define CO2_HIGH 20
 define CO2_LOW  19
+
+define N2_HIGH 60
+define N2_LOW  58
 
 main:
 yield
@@ -71,9 +96,21 @@ sgt r9 r8 0
 max r7 r7 r9
 s filtrationMethaneH2_800 On r7
 
-# Pump runs whenever any one of the three triggers above is active
+l r11 sensor_800 RatioNitrogen
+mul r11 r11 r0   # N2 partial pressure
+
+beqz r12 n2_off
+sgt r13 r11 N2_LOW
+j n2_set
+n2_off:
+sgt r13 r11 N2_HIGH
+n2_set:
+move r12 r13   # persist for next tick's hysteresis check - see comment above
+
+# Pump runs whenever any one of the four triggers above is active
 max r10 r3 r5
 max r10 r10 r7
+max r10 r10 r12
 s recyclePump_800 On r10
 
 j main

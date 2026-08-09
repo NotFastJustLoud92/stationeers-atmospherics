@@ -2,12 +2,21 @@ alias pumpState_800r    d0   # reads PU-801, the same Volume Pump atmospherics_r
 alias filtrationO2_800r d1   # Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank
 alias filtrationN2_800r d2   # Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302
 
-# O2 and N2 have no trigger of their own - whenever the main recapture housing turns the
-# pump on (CO2 excess, or any Pollutant/Methane/Hydrogen present), these two ride along and
-# recover whatever O2 and N2 are in that same slipstream back to their tanks instead of
-# letting them flow back into the room. Regulation re-doses the room from those tanks on its
-# own schedule, so this is recycling, not a net loss - it's also why nothing here needs its
-# own room sensor, just a read on the pump's current state.
+# O2 has no trigger of its own - whenever the main recapture housing turns the pump on (CO2
+# excess, N2 excess, or any Pollutant/Methane/Hydrogen present), it rides along and recovers
+# whatever O2 is in that same slipstream back to its tank instead of letting it flow back
+# into the room. Regulation re-doses the room from that tank on its own schedule, so this is
+# recycling, not a net loss.
+#
+# N2 (filtrationN2_800r below) also just mirrors the pump's On state here, same as O2 - but
+# as of 2026-08-09 N2 DOES have a real trigger now, it just lives on the main housing
+# (atmospherics_recapture.ic10), not here. Ryan found the room sitting at ~80% N2 with
+# nothing anywhere in this build actively skimming a surplus back down, so the main housing
+# now folds an N2-excess hysteresis check into its pump decision. This housing's logic for
+# filtrationN2_800r didn't need to change at all to pick that up - it already turns on
+# whenever the pump does, for whatever reason the pump has.
+#
+# Neither filter here needs its own room sensor, just a read on the pump's current state.
 #
 # This is the companion to atmospherics_recapture.ic10, split out because one IC housing
 # only has 6 pins and the full recapture loop (sensor, pump, 5 filters) needs 7 devices.
