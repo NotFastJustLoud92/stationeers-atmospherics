@@ -1,4 +1,4 @@
-alias sensor_800              d0   # Gas Sensor, shared room
+alias sensor_800              d0   # Gas Sensor, shared room - SAME physical device as GS-601/sensor_600 in atmospherics_regulation.ic10, wired here on a second cable, not a separate unit
 alias recyclePump_800         d1   # Volume Pump, pulls room air into the filtration manifold
 alias filtrationCO2_800       d2   # Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401
 alias filtrationPollutant_800 d3   # Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank

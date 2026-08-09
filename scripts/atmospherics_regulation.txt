@@ -1,4 +1,4 @@
-alias sensor_600  d0   # Gas Sensor, shared room
+alias sensor_600  d0   # Gas Sensor, shared room - also wired on a second cable into atmospherics_recapture.ic10's d0 (sensor_800), same physical device, not two separate Gas Sensors
 alias n2Pump_600  d1   # Turbo Volume Pump
 alias o2Pump_600  d2   # Turbo Volume Pump
 alias co2Pump_600 d3   # Turbo Volume Pump
