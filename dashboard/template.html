@@ -1,0 +1,1231 @@
+<title>Cragspire Console</title>
+<style>
+  @font-face {
+    font-family: 'ConsoleMono';
+    src: local('JetBrains Mono'), local('Cascadia Code'), local('SF Mono'), local('Consolas');
+  }
+
+  :root {
+    --bg: #0a0d11;
+    --bg-2: #0d1117;
+    --panel: #12161c;
+    --panel-2: #171d25;
+    --panel-3: #1c2430;
+    --border: #232b35;
+    --border-strong: #333e4a;
+    --text: #e8edf2;
+    --text-muted: #93a1b0;
+    --text-faint: #5c6b7a;
+    --accent: #d97b4a;
+    --accent-soft: rgba(217,123,74,0.14);
+    --accent-strong: #f0985f;
+    --cyan: #4fd1c5;
+    --cyan-soft: rgba(79,209,197,0.12);
+    --ok: #5fc77e;
+    --ok-soft: rgba(95,199,126,0.14);
+    --warn: #e0a244;
+    --warn-soft: rgba(224,162,68,0.14);
+    --critical: #e2695a;
+    --critical-soft: rgba(226,105,90,0.14);
+    --mono: 'ConsoleMono', 'JetBrains Mono', 'Cascadia Code', 'SF Mono', Consolas, 'Liberation Mono', monospace;
+    --sans: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --radius: 3px;
+    --rail-w: 216px;
+    --hud-h: 60px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(217,123,74,0.05), transparent),
+      radial-gradient(ellipse 700px 450px at 105% 15%, rgba(79,209,197,0.05), transparent);
+  }
+
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-2); }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+  .shell {
+    display: grid;
+    grid-template-columns: var(--rail-w) 1fr;
+    grid-template-rows: var(--hud-h) 1fr;
+    grid-template-areas:
+      "rail hud"
+      "rail main";
+    height: 100vh;
+    width: 100%;
+  }
+
+  /* ---------- RAIL ---------- */
+  .rail {
+    grid-area: rail;
+    background: var(--bg-2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 12px;
+    gap: 4px;
+    overflow-y: auto;
+  }
+
+  .rail-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 18px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .rail-brand .mark {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: conic-gradient(from 220deg, var(--accent), var(--cyan), var(--accent));
+    flex-shrink: 0;
+    position: relative;
+  }
+  .rail-brand .mark::after {
+    content: "";
+    position: absolute; inset: 4px;
+    border-radius: 50%;
+    background: var(--bg-2);
+  }
+  .rail-brand .name {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .rail-brand .name small {
+    display: block;
+    font-weight: 400;
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 10px;
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: none;
+    text-align: left;
+    width: 100%;
+  }
+  .nav-item .ic { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.75; }
+  .nav-item:hover { background: var(--panel); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border-color: rgba(217,123,74,0.3);
+  }
+  .nav-item.active .ic { opacity: 1; }
+  .nav-item .num {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-faint);
+    background: var(--panel-2);
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+  .nav-item.active .num { color: var(--accent); background: rgba(217,123,74,0.16); }
+
+  .rail-spacer { flex: 1; }
+
+  .rail-foot {
+    padding: 10px 10px 2px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.03em;
+    line-height: 1.7;
+  }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    grid-area: hud;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 0 22px;
+    overflow-x: auto;
+  }
+
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+  }
+  .hud-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .hud-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .hud-divider { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); border-color: rgba(95,199,126,0.3); }
+  .pill.ok .dot { background: var(--ok); box-shadow: 0 0 0 3px rgba(95,199,126,0.18); }
+  .pill.critical { background: var(--critical-soft); color: var(--critical); border-color: rgba(226,105,90,0.3); }
+  .pill.critical .dot { background: var(--critical); box-shadow: 0 0 0 3px rgba(226,105,90,0.18); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .pill.ok .dot { animation: pulse 2.4s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .pill.ok .dot { animation: none; } }
+
+  .hud-spacer { flex: 1; }
+  .hud-refresh {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+  .hud-refresh .t { color: var(--text-muted); }
+
+  /* ---------- MAIN ---------- */
+  .main {
+    grid-area: main;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .panel {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+    padding: 32px 40px 60px;
+  }
+  .panel.active { display: block; }
+  .panel.flush { padding: 0; }
+
+  .panel-head {
+    margin-bottom: 26px;
+  }
+  .panel-eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .panel-title {
+    font-family: var(--sans);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+  }
+  .panel-sub {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    max-width: 68ch;
+  }
+
+  /* card grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-big {
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .card-big .unit { font-size: 14px; color: var(--text-faint); font-weight: 500; margin-left: 4px; }
+  .card-sub { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  .card.accent-cyan .card-big { color: var(--cyan); }
+  .card.accent-warm .card-big { color: var(--accent-strong); }
+
+  .kv-list { display: flex; flex-direction: column; gap: 9px; }
+  .kv-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+  .kv-row .k { color: var(--text-faint); font-family: var(--mono); font-size: 11px; }
+  .kv-row .v { color: var(--text); font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .kv-row .v.copy { cursor: pointer; border-bottom: 1px dashed var(--border-strong); }
+
+  .player-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .player-row:last-child { border-bottom: none; }
+  .player-row .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--panel-3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--cyan);
+    flex-shrink: 0;
+  }
+  .player-row .name { font-weight: 600; flex: 1; }
+  .player-row .since { color: var(--text-faint); font-family: var(--mono); font-size: 10.5px; }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 28px 0 12px;
+  }
+
+  code, .mono { font-family: var(--mono); }
+  .prose code {
+    background: var(--panel-2);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 0.9em;
+    color: var(--accent-strong);
+  }
+
+  /* iframe embeds */
+  .embed-wrap { height: 100%; display: flex; flex-direction: column; }
+  .embed-bar {
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-2);
+    display: flex; align-items: center; gap: 14px;
+    font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  }
+  .embed-bar .tag { color: var(--accent); font-weight: 600; }
+  .embed-bar a.open-new { margin-left: auto; color: var(--cyan); }
+  iframe.embed-frame {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #f2ede0;
+  }
+
+  /* memory */
+  .mem-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .mem-tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 7px 13px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .mem-tab.active { background: var(--cyan-soft); color: var(--cyan); border-color: rgba(79,209,197,0.35); }
+  .mem-body {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    max-width: 76ch;
+  }
+  .mem-body h1, .mem-body h2, .mem-body h3 { text-wrap: balance; }
+  .mem-body h2 {
+    font-size: 16px; margin: 26px 0 10px; padding-top: 16px; border-top: 1px solid var(--border);
+    color: var(--accent-strong);
+  }
+  .mem-body h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+  .mem-body p { margin: 0 0 13px; color: var(--text); font-size: 13.5px; }
+  .mem-body strong { color: var(--text); }
+  .mem-body em { color: var(--text-muted); }
+
+  /* card link affordance */
+  .card.clickable {
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .card.clickable:hover { border-color: var(--border-strong); background: var(--panel-2); }
+  .card.clickable:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .card-label .goto { color: var(--text-faint); font-size: 11px; }
+  .card.clickable:hover .card-label .goto { color: var(--cyan); }
+
+  /* scripts panel */
+  .script-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .script-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .script-item {
+    text-align: left;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .script-item:hover { border-color: var(--border-strong); background: var(--panel-2); }
+  .script-item.active { border-color: rgba(79,209,197,0.35); background: var(--cyan-soft); }
+  .script-item .sname { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text); }
+  .script-item.superseded .sname { color: var(--text-faint); text-decoration: line-through; }
+  .script-item .srole { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+  .script-item .smeta { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .script-tag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 2px; color: var(--accent-strong); background: rgba(217,123,74,0.14);
+  }
+  .script-tag.tag-super { color: var(--text-faint); background: var(--panel-3); }
+  .script-bytes { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-left: auto; }
+  .script-viewer {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+  }
+  .script-viewer-bar {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  }
+  .script-viewer-bar .sv-name { color: var(--text); font-weight: 700; font-size: 12.5px; }
+  .script-viewer pre {
+    margin: 0;
+    padding: 20px 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    overflow: auto;
+    white-space: pre;
+  }
+  @media (max-width: 900px) {
+    .script-layout { grid-template-columns: 1fr; }
+    .script-viewer { position: static; min-height: 320px; }
+  }
+
+  /* activity timeline */
+  .timeline { display: flex; flex-direction: column; }
+  .tl-group { margin-bottom: 6px; }
+  .tl-group-label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-faint); padding: 14px 0 8px;
+  }
+  .tl-item {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    padding: 8px 0;
+    position: relative;
+  }
+  .tl-item::before {
+    content: "";
+    position: absolute; left: 9px; top: 0; bottom: -8px;
+    width: 1px; background: var(--border);
+  }
+  .tl-item:last-child::before { display: none; }
+  .tl-dot {
+    width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  }
+  .tl-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .tl-text { font-size: 13px; padding-top: 1px; }
+  .tl-text .commit-hash { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-left: 6px; }
+
+  /* terminal panel */
+  .term-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .term-window {
+    background: #05070a;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+  .term-bar {
+    background: var(--panel-2);
+    padding: 9px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .term-bar .term-title {
+    margin-left: 8px; font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  }
+  .term-body {
+    padding: 20px 22px 24px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: #7de8a4;
+    min-height: 320px;
+  }
+  .term-body .dim { color: var(--text-faint); }
+  .term-body .warm { color: var(--accent-strong); }
+  .term-body .cy { color: var(--cyan); }
+  .term-line { opacity: 0; animation: termIn 0.25s ease forwards; }
+  @keyframes termIn { to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .term-line { opacity: 1; animation: none; } }
+  .term-cursor {
+    display: inline-block; width: 7px; height: 14px; background: #7de8a4;
+    vertical-align: -2px; animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .term-cursor { animation: none; } }
+
+  .term-cta {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    margin-top: 18px;
+    padding: 16px 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .term-cta .txt { font-size: 12.5px; color: var(--text-muted); }
+  .term-cta .txt strong { color: var(--text); display: block; font-size: 14px; margin-bottom: 2px; }
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(217,123,74,0.4);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none !important;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { background: rgba(217,123,74,0.24); }
+
+  /* repo panel */
+  .commit-list { display: flex; flex-direction: column; }
+  .commit-row {
+    display: grid; grid-template-columns: 78px 1fr; gap: 16px;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .commit-row:first-child { padding-top: 0; }
+  .commit-row .hash {
+    font-family: var(--mono); color: var(--cyan); font-size: 11.5px; padding-top: 1px;
+  }
+  .commit-row .msg { color: var(--text); }
+
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .badge {
+    font-family: var(--mono); font-size: 10.5px;
+    padding: 4px 9px; border-radius: 3px;
+    background: var(--panel-2); color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .rail-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .rail-scrim {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 40;
+  }
+
+  @media (max-width: 900px) {
+    :root { --rail-w: 0px; }
+    .shell { grid-template-columns: 1fr; grid-template-areas: "hud" "main"; }
+    .rail-toggle { display: flex; }
+    .rail {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 240px;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+    }
+    .rail.open { transform: translateX(0); }
+    body.rail-open .rail-scrim { display: block; }
+  }
+</style>
+
+<div class="shell">
+  <nav class="rail">
+    <div class="rail-brand">
+      <div class="mark"></div>
+      <div class="name">CRAGSPIRE<small>Mission Console</small></div>
+    </div>
+
+    <button class="nav-item active" data-panel="overview">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      Overview
+    </button>
+    <button class="nav-item" data-panel="diagram">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7l3 9M16 7l-3 9M8.4 6h7.2"/></svg>
+      P&amp;ID Diagram
+    </button>
+    <button class="nav-item" data-panel="handoff">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5M9 13h6M9 17h6M9 9h2"/></svg>
+      Handoff Log
+    </button>
+    <button class="nav-item" data-panel="scripts">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9l-6-6z"/><path d="M14 3v6h6M9 13l-2 2 2 2M13 13l2 2-2 2"/></svg>
+      Scripts
+    </button>
+    <button class="nav-item" data-panel="memory">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Memory
+    </button>
+    <button class="nav-item" data-panel="activity">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Activity
+    </button>
+    <button class="nav-item" data-panel="terminal">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 9l4 3-4 3M13 15h5"/></svg>
+      Terminal
+    </button>
+    <button class="nav-item" data-panel="repo">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 00-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
+      Repository
+    </button>
+
+    <div class="rail-spacer"></div>
+    <div class="rail-foot" id="railFoot">
+      REV C · SNAPSHOT<br>
+      <span id="railTimestamp">—</span>
+    </div>
+  </nav>
+  <div class="rail-scrim" id="railScrim"></div>
+
+  <header class="hud">
+    <button class="rail-toggle" id="railToggle" aria-label="Toggle navigation">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="hud-item">
+      <span class="pill __SERVER_PILL_CLASS__" id="serverPill"><span class="dot"></span>__SERVER_STATUS_TEXT__</span>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-item">
+      <span class="hud-label">Players</span>
+      <span class="hud-value" id="hudPlayers">__PLAYERS_COUNT__ / 6</span>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-item">
+      <span class="hud-label">Next Maintenance</span>
+      <span class="hud-value" id="hudCountdown">—</span>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-item">
+      <span class="hud-label">World</span>
+      <span class="hud-value">Cragspire</span>
+    </div>
+    <div class="hud-spacer"></div>
+    <div class="hud-refresh">Snapshot refreshed <span class="t" id="hudRefreshTime">—</span></div>
+  </header>
+
+  <main class="main">
+
+    <!-- ================= OVERVIEW ================= -->
+    <section class="panel active" id="panel-overview">
+      <div class="panel-head">
+        <div class="panel-eyebrow">Mars2 · Hellas Crags</div>
+        <h1 class="panel-title">Cragspire Station</h1>
+        <p class="panel-sub">Live-ish snapshot of the dedicated server, plus everything tracked for the atmospherics engineering project — diagram, handoff log, memory, and build activity, all in one place.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-label">Server status</div>
+          <div class="card-big" id="ovStatus">__SERVER_STATUS_TEXT__</div>
+          <div class="card-sub" id="ovUptime">__UPTIME_TEXT__</div>
+        </div>
+        <div class="card accent-cyan">
+          <div class="card-label">Players online</div>
+          <div class="card-big"><span id="ovPlayersCount">0</span><span class="unit">/ 6 slots</span></div>
+          <div class="card-sub" id="ovPlayersNames">—</div>
+        </div>
+        <div class="card accent-warm">
+          <div class="card-label">Next maintenance restart</div>
+          <div class="card-big mono" id="ovCountdown">—</div>
+          <div class="card-sub">04:00 &amp; 16:00 daily · MST (UTC−7, no DST) · SteamCMD update check + world save</div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="card">
+          <div class="card-label">Currently connected</div>
+          <div id="ovPlayerList"></div>
+        </div>
+        <div class="card">
+          <div class="card-label">World</div>
+          <div class="kv-list">
+            <div class="kv-row"><span class="k">Name</span><span class="v">Cragspire</span></div>
+            <div class="kv-row"><span class="k">Map</span><span class="v">Mars2</span></div>
+            <div class="kv-row"><span class="k">Start</span><span class="v">Hellas Crags</span></div>
+            <div class="kv-row"><span class="k">Difficulty</span><span class="v">Normal</span></div>
+            <div class="kv-row"><span class="k">Autosave</span><span class="v">every 5 min</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Atmospherics project</div>
+      <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="card clickable" id="ovGotoDiagram" role="button" tabindex="0">
+          <div class="card-label">Design status <span class="goto">view diagram →</span></div>
+          <div class="card-big" style="font-size:20px;">P&amp;ID Rev C</div>
+          <div class="card-sub">12 IC housings · fully designed, not yet commissioned in-game</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Latest commit</div>
+          <div class="card-big" style="font-size:14px; font-weight:600; line-height:1.4;" id="ovLastCommit">__LAST_COMMIT_MSG__</div>
+          <div class="card-sub mono">__LAST_COMMIT_HASH__ · stationeers-atmospherics</div>
+        </div>
+        <div class="card clickable" id="ovGotoScripts" role="button" tabindex="0">
+          <div class="card-label">Scripts <span class="goto">browse all →</span></div>
+          <div class="card-big">13<span class="unit">IC housings</span></div>
+          <div class="card-sub">12 active + 1 superseded, all under the 4,096-byte cap</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DIAGRAM ================= -->
+    <section class="panel flush" id="panel-diagram">
+      <div class="embed-wrap">
+        <div class="embed-bar">
+          <span class="tag">P&amp;ID</span>
+          <span>Atmospherics System — Process &amp; Instrumentation Diagram · Rev C</span>
+          <a class="open-new" href="https://claude.ai/code/artifact/3d3df33f-8ead-4899-ab8b-3e51d931efd9" target="_blank" rel="noopener">Open full artifact ↗</a>
+        </div>
+        <iframe class="embed-frame" id="pidFrame" title="P&ID diagram"></iframe>
+      </div>
+    </section>
+
+    <!-- ================= HANDOFF ================= -->
+    <section class="panel flush" id="panel-handoff">
+      <div class="embed-wrap">
+        <div class="embed-bar">
+          <span class="tag">LOG</span>
+          <span>Atmospherics Room — Handoff Log</span>
+          <a class="open-new" href="https://claude.ai/code/artifact/f0b94b11-8303-4941-8b72-4fe1bc054a75" target="_blank" rel="noopener">Open full artifact ↗</a>
+        </div>
+        <iframe class="embed-frame" id="handoffFrame" title="Handoff log"></iframe>
+      </div>
+    </section>
+
+    <!-- ================= SCRIPTS ================= -->
+    <section class="panel" id="panel-scripts">
+      <div class="panel-head">
+        <div class="panel-eyebrow">IC10 · scripts/</div>
+        <h1 class="panel-title">Atmospherics scripts</h1>
+        <p class="panel-sub">All 13 IC Housing programs, same files as loaded on the build machine at <span class="mono">Desktop\Stationeers IC10 Scripts\</span>. Every one sits under the hard 4,096-byte IC10 script cap.</p>
+      </div>
+      <div class="script-layout">
+        <div class="script-list" id="scriptList"></div>
+        <div class="script-viewer">
+          <div class="script-viewer-bar">
+            <span class="sv-name" id="svName">Select a script</span>
+            <span id="svMeta"></span>
+          </div>
+          <pre id="svBody"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MEMORY ================= -->
+    <section class="panel" id="panel-memory">
+      <div class="panel-head">
+        <div class="panel-eyebrow">Persistent memory</div>
+        <h1 class="panel-title">What I remember about this project</h1>
+        <p class="panel-sub">Snapshot of the memory files backing this project — read at the start of every session, updated as things change.</p>
+      </div>
+      <div class="mem-tabs" id="memTabs"></div>
+      <div class="mem-body" id="memBody"></div>
+    </section>
+
+    <!-- ================= ACTIVITY ================= -->
+    <section class="panel" id="panel-activity">
+      <div class="panel-head">
+        <div class="panel-eyebrow">Snapshot, not live</div>
+        <h1 class="panel-title">Recent activity</h1>
+        <p class="panel-sub">What got built in the last working session. Refreshes when this dashboard is redeployed, not continuously.</p>
+      </div>
+      <div class="timeline" id="activityTimeline"></div>
+    </section>
+
+    <!-- ================= TERMINAL ================= -->
+    <section class="panel" id="panel-terminal">
+      <div class="panel-head">
+        <div class="panel-eyebrow">Decorative</div>
+        <h1 class="panel-title">Terminal</h1>
+        <p class="panel-sub">This panel can't hold a live conversation — a static page has no way to actually talk back. It's here for the console feel; use the link below to come back to the real thing.</p>
+      </div>
+      <div class="term-wrap">
+        <div class="term-window">
+          <div class="term-bar">
+            <div class="term-dot" style="background:#e2695a;"></div>
+            <div class="term-dot" style="background:#e0a244;"></div>
+            <div class="term-dot" style="background:#5fc77e;"></div>
+            <div class="term-title">claude@cragspire — ic10 / atmospherics</div>
+          </div>
+          <div class="term-body" id="termBody"></div>
+        </div>
+        <div class="term-cta">
+          <div class="txt"><strong>Want to actually talk to me?</strong>This window is decorative — open a real session to keep working.</div>
+          <a class="btn" href="https://claude.ai/code" target="_blank" rel="noopener">Open Claude Code ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REPO ================= -->
+    <section class="panel" id="panel-repo">
+      <div class="panel-head">
+        <div class="panel-eyebrow">GitHub</div>
+        <h1 class="panel-title">stationeers-atmospherics</h1>
+        <p class="panel-sub">Every script, diagram, and BOM lives here — source of truth for the in-game build.</p>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div class="card">
+          <div class="card-label">Repository</div>
+          <div class="kv-list">
+            <div class="kv-row"><span class="k">Owner</span><span class="v">NotFastJustLoud92</span></div>
+            <div class="kv-row"><span class="k">Branch</span><span class="v">master</span></div>
+            <div class="kv-row"><span class="k">Scripts</span><span class="v">12 active .txt</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Latest revision</div>
+          <div class="kv-list">
+            <div class="kv-row"><span class="k">P&amp;ID</span><span class="v">Rev C</span></div>
+            <div class="kv-row"><span class="k">Housings</span><span class="v">12 + 1 superseded</span></div>
+            <div class="kv-row"><span class="k">Status</span><span class="v">designed, untested</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Open in GitHub</div>
+          <a class="btn" href="https://github.com/NotFastJustLoud92/stationeers-atmospherics" target="_blank" rel="noopener" style="margin-top:4px;">View repository ↗</a>
+          <div class="badge-row">
+            <span class="badge">BOM.md</span>
+            <span class="badge">README.md</span>
+            <span class="badge">/scripts</span>
+            <span class="badge">/diagrams</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Recent commits</div>
+      <div class="card">
+        <div class="commit-list" id="commitList"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script type="text/plain" id="data-pid">__PID_B64__</script>
+<script type="text/plain" id="data-handoff">__HANDOFF_B64__</script>
+<script type="text/plain" id="data-mem-server">__MEM_SERVER_B64__</script>
+<script type="text/plain" id="data-mem-atmos">__MEM_ATMOS_B64__</script>
+<script type="text/plain" id="data-mem-batch">__MEM_BATCH_B64__</script>
+<script type="text/plain" id="data-mem-launchpad">__MEM_LAUNCHPAD_B64__</script>
+
+<script type="text/plain" id="data-script-intake">__SCRIPT_INTAKE_B64__</script>
+<script type="text/plain" id="data-script-compression">__SCRIPT_COMPRESSION_B64__</script>
+<script type="text/plain" id="data-script-gassplit">__SCRIPT_GASSPLIT_B64__</script>
+<script type="text/plain" id="data-script-co2supply">__SCRIPT_CO2SUPPLY_B64__</script>
+<script type="text/plain" id="data-script-icecrusher">__SCRIPT_ICECRUSHER_B64__</script>
+<script type="text/plain" id="data-script-n2osupply">__SCRIPT_N2OSUPPLY_B64__</script>
+<script type="text/plain" id="data-script-regulation">__SCRIPT_REGULATION_B64__</script>
+<script type="text/plain" id="data-script-recapture-co2">__SCRIPT_RECAPTURE_CO2_B64__</script>
+<script type="text/plain" id="data-script-recapture-pollutant">__SCRIPT_RECAPTURE_POLLUTANT_B64__</script>
+<script type="text/plain" id="data-script-recapture-methaneh2">__SCRIPT_RECAPTURE_METHANEH2_B64__</script>
+<script type="text/plain" id="data-script-recapture-o2">__SCRIPT_RECAPTURE_O2_B64__</script>
+<script type="text/plain" id="data-script-recapture-n2">__SCRIPT_RECAPTURE_N2_B64__</script>
+<script type="text/plain" id="data-script-intake-compression">__SCRIPT_INTAKE_COMPRESSION_B64__</script>
+
+<script type="application/json" id="data-players">__PLAYERS_JSON__</script>
+
+<script>
+(function(){
+  // ---------- nav switching ----------
+  var navItems = document.querySelectorAll('.nav-item');
+  var panels = document.querySelectorAll('.panel');
+  var frameState = { diagram: false, handoff: false };
+
+  function activate(name) {
+    navItems.forEach(function(n){ n.classList.toggle('active', n.dataset.panel === name); });
+    panels.forEach(function(p){ p.classList.toggle('active', p.id === 'panel-' + name); });
+    if (name === 'diagram' && !frameState.diagram) {
+      document.getElementById('pidFrame').src = 'data:text/html;base64,' + b64('data-pid');
+      frameState.diagram = true;
+    }
+    if (name === 'handoff' && !frameState.handoff) {
+      document.getElementById('handoffFrame').src = 'data:text/html;base64,' + b64('data-handoff');
+      frameState.handoff = true;
+    }
+  }
+  navItems.forEach(function(n){ n.addEventListener('click', function(){ activate(n.dataset.panel); closeRail(); }); });
+
+  // ---------- mobile rail drawer ----------
+  var railEl = document.querySelector('.rail');
+  function openRail() { railEl.classList.add('open'); document.body.classList.add('rail-open'); }
+  function closeRail() { railEl.classList.remove('open'); document.body.classList.remove('rail-open'); }
+  var railToggle = document.getElementById('railToggle');
+  if (railToggle) railToggle.addEventListener('click', function(){
+    railEl.classList.contains('open') ? closeRail() : openRail();
+  });
+  var railScrim = document.getElementById('railScrim');
+  if (railScrim) railScrim.addEventListener('click', closeRail);
+
+  function b64(id) { return document.getElementById(id).textContent; }
+  function decode(id) {
+    try { return decodeURIComponent(escape(atob(b64(id)))); }
+    catch(e) { return atob(b64(id)); }
+  }
+
+  // ---------- countdown to next 04:00 / 16:00 server-local (MST, UTC-7, fixed) ----------
+  function nextMaintenanceUTC() {
+    var now = new Date();
+    var nowUtcMs = now.getTime();
+    // server local = UTC-7, fixed (Arizona, no DST)
+    var offsetMs = 7 * 3600 * 1000;
+    var serverNow = new Date(nowUtcMs - offsetMs);
+    var y = serverNow.getUTCFullYear(), m = serverNow.getUTCMonth(), d = serverNow.getUTCDate();
+    var candidates = [
+      Date.UTC(y, m, d, 4, 0, 0),
+      Date.UTC(y, m, d, 16, 0, 0),
+      Date.UTC(y, m, d + 1, 4, 0, 0)
+    ];
+    var serverNowMs = serverNow.getTime();
+    for (var i = 0; i < candidates.length; i++) {
+      if (candidates[i] > serverNowMs) return candidates[i] + offsetMs;
+    }
+  }
+  function fmtCountdown(ms) {
+    if (ms < 0) ms = 0;
+    var h = Math.floor(ms / 3600000);
+    var m = Math.floor((ms % 3600000) / 60000);
+    var s = Math.floor((ms % 60000) / 1000);
+    return (h<10?'0':'')+h + ':' + (m<10?'0':'')+m + ':' + (s<10?'0':'')+s;
+  }
+  function tickCountdown() {
+    var target = nextMaintenanceUTC();
+    var remain = target - Date.now();
+    var txt = fmtCountdown(remain);
+    document.getElementById('hudCountdown').textContent = txt;
+    document.getElementById('ovCountdown').textContent = txt;
+  }
+  tickCountdown();
+  setInterval(tickCountdown, 1000);
+
+  // ---------- memory tabs ----------
+  var memFiles = [
+    { id: 'data-mem-server', label: 'Dedicated Server', title: 'Stationeers Dedicated Server' },
+    { id: 'data-mem-atmos', label: 'IC10 Atmospherics', title: 'Stationeers IC10 Atmospherics' },
+    { id: 'data-mem-batch', label: 'Batch Scripting', title: 'Windows Batch Scripting Gotchas' },
+    { id: 'data-mem-launchpad', label: 'LaunchPad Versions', title: 'StationeersLaunchPad Version Matching' }
+  ];
+
+  function mdToHtml(md) {
+    // strip YAML frontmatter block (--- ... ---) if present, not just the delimiter lines
+    if (/^---\s*$/.test(md.split('\n')[0])) {
+      var rest = md.split('\n').slice(1);
+      var closeIdx = rest.findIndex(function(l){ return /^---\s*$/.test(l); });
+      if (closeIdx !== -1) md = rest.slice(closeIdx + 1).join('\n');
+    }
+    var lines = md.split('\n');
+    var html = '', inList = false;
+    lines.forEach(function(line){
+      var h2 = line.match(/^##\s+(.*)/);
+      var h1 = line.match(/^#\s+(.*)/);
+      if (h1) { if(inList){html+='</ul>';inList=false;} html += '<h1>' + inline(h1[1]) + '</h1>'; return; }
+      if (h2) { if(inList){html+='</ul>';inList=false;} html += '<h2>' + inline(h2[1]) + '</h2>'; return; }
+      if (/^\s*$/.test(line)) { if(inList){html+='</ul>';inList=false;} return; }
+      html += '<p>' + inline(line) + '</p>';
+    });
+    if (inList) html += '</ul>';
+    return html;
+  }
+  function inline(s) {
+    s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\[\[([^\]]+)\]\]/g, '<em>$1</em>');
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return s;
+  }
+
+  var tabsEl = document.getElementById('memTabs');
+  var bodyEl = document.getElementById('memBody');
+  memFiles.forEach(function(f, i){
+    var btn = document.createElement('button');
+    btn.className = 'mem-tab' + (i===0 ? ' active' : '');
+    btn.textContent = f.label;
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.mem-tab').forEach(function(t){ t.classList.remove('active'); });
+      btn.classList.add('active');
+      bodyEl.innerHTML = mdToHtml(decode(f.id));
+    });
+    tabsEl.appendChild(btn);
+  });
+  bodyEl.innerHTML = mdToHtml(decode(memFiles[0].id));
+
+  // ---------- overview card navigation ----------
+  function wireGoto(id, panel) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', function(){ activate(panel); });
+    el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(panel); } });
+  }
+  wireGoto('ovGotoDiagram', 'diagram');
+  wireGoto('ovGotoScripts', 'scripts');
+
+  // ---------- players (populated from live snapshot at build time) ----------
+  function initials(name) {
+    var caps = name.match(/[A-Z]/g) || [];
+    if (caps.length >= 2) return (caps[0] + caps[1]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  }
+  var playersEl = document.getElementById('data-players');
+  var players = [];
+  try { players = JSON.parse(playersEl ? playersEl.textContent : '[]'); } catch (e) { players = []; }
+
+  document.getElementById('ovPlayersCount').textContent = players.length;
+  document.getElementById('ovPlayersNames').textContent = players.length ? players.map(function(p){ return p.name; }).join(', ') : 'No one online right now';
+
+  var listEl = document.getElementById('ovPlayerList');
+  if (players.length) {
+    players.forEach(function(p){
+      var row = document.createElement('div');
+      row.className = 'player-row';
+      var avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.textContent = initials(p.name);
+      var name = document.createElement('div'); name.className = 'name'; name.textContent = p.name;
+      var since = document.createElement('div'); since.className = 'since'; since.textContent = 'since ' + p.since;
+      row.appendChild(avatar); row.appendChild(name); row.appendChild(since);
+      listEl.appendChild(row);
+    });
+  } else {
+    listEl.innerHTML = '<div class="player-row" style="border-bottom:none;"><div class="since" style="font-size:12.5px;">No one online right now</div></div>';
+  }
+
+  // ---------- scripts panel ----------
+  var scriptFiles = [
+    { id: 'data-script-intake', name: 'atmospherics_intake.ic10', area: 'Area 100', role: 'Vent gating — only overpressure protection on the raw side', bytes: 1709, pins: 6 },
+    { id: 'data-script-compression', name: 'atmospherics_compression.ic10', area: 'Area 200', role: 'Turbo Volume Pump bank + cooling telemetry + relief', bytes: 2413, pins: 6 },
+    { id: 'data-script-gassplit', name: 'atmospherics_gassplit.ic10', area: 'Area 300', role: 'Splits condensed gas into N2 and O2, plus relief valves', bytes: 2744, pins: 6 },
+    { id: 'data-script-co2supply', name: 'atmospherics_co2supply.ic10', area: 'Area 400', role: 'Purges Area 300 liquid CO2 into a gas buffer, plus relief', bytes: 2717, pins: 5 },
+    { id: 'data-script-icecrusher', name: 'atmospherics_icecrusher.ic10', area: 'Area 500', role: 'Oxite branch — Ice Crusher filtered into O2 + N2', bytes: 2445, pins: 5 },
+    { id: 'data-script-n2osupply', name: 'atmospherics_n2osupply.ic10', area: 'Area 500', role: 'Nitrice branch — Ice Crusher filtered into N2O', bytes: 2554, pins: 4 },
+    { id: 'data-script-regulation', name: 'atmospherics_regulation.ic10', area: 'Area 600', role: 'Holds room at 60% N2 / 20% O2 / 20% CO2 @ 100 kPa', bytes: 1713, pins: 4 },
+    { id: 'data-script-recapture-co2', name: 'atmospherics_recapture_co2.ic10', area: 'Area 800', role: 'Recapture, CO2 branch — dedicated pump + inline tank', bytes: 1914, pins: 5 },
+    { id: 'data-script-recapture-pollutant', name: 'atmospherics_recapture_pollutant.ic10', area: 'Area 800', role: 'Recapture, Pollutant branch — captures any presence to storage', bytes: 1520, pins: 5 },
+    { id: 'data-script-recapture-methaneh2', name: 'atmospherics_recapture_methaneh2.ic10', area: 'Area 800', role: 'Recapture, Methane+Hydrogen branch — one unit, two cartridges', bytes: 1682, pins: 5 },
+    { id: 'data-script-recapture-o2', name: 'atmospherics_recapture_o2.ic10', area: 'Area 800', role: 'Recapture, O2 branch — skims excess into Area 500 tank bank', bytes: 1657, pins: 5 },
+    { id: 'data-script-recapture-n2', name: 'atmospherics_recapture_n2.ic10', area: 'Area 800', role: 'Recapture, N2 branch — skims excess into Area 300 TK-302', bytes: 1643, pins: 5 },
+    { id: 'data-script-intake-compression', name: 'atmospherics_intake_compression.ic10', area: 'Superseded', role: 'Kept for history — dead CO2-drain branch (Celsius/Kelvin bug)', bytes: 870, pins: 6, superseded: true }
+  ];
+
+  var scriptListEl = document.getElementById('scriptList');
+  var svName = document.getElementById('svName');
+  var svMeta = document.getElementById('svMeta');
+  var svBody = document.getElementById('svBody');
+
+  function showScript(f, btn) {
+    document.querySelectorAll('.script-item').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    svName.textContent = f.name;
+    svMeta.innerHTML = '<span class="script-tag' + (f.superseded ? ' tag-super' : '') + '">' + f.area + '</span> ' + f.bytes + ' bytes · ' + f.pins + ' pins';
+    svBody.textContent = decode(f.id);
+  }
+
+  scriptFiles.forEach(function(f, i){
+    var btn = document.createElement('button');
+    btn.className = 'script-item' + (f.superseded ? ' superseded' : '');
+    btn.innerHTML =
+      '<div class="sname">' + f.name + '</div>' +
+      '<div class="srole">' + f.role + '</div>' +
+      '<div class="smeta"><span class="script-tag' + (f.superseded ? ' tag-super' : '') + '">' + f.area + '</span><span class="script-bytes">' + f.bytes + ' B · ' + f.pins + ' pins</span></div>';
+    btn.addEventListener('click', function(){ showScript(f, btn); });
+    scriptListEl.appendChild(btn);
+    if (i === 0) showScript(f, btn);
+  });
+
+  // ---------- terminal boot log ----------
+  var bootLines = [
+    ['dim', '$ claude --resume cragspire-atmospherics'],
+    ['', 'Loaded 4 memory files · 13 IC10 housings · P&ID Rev C'],
+    ['cy', '→ session: full recapture redesign — 5 independent branches shipped'],
+    ['warm', '→ commit 5754d1b pushed to origin/master'],
+    ['dim', ''],
+    ['', 'This terminal is a static snapshot. It cannot run commands.'],
+    ['', 'Use the button below to open a real session.']
+  ];
+  var termBody = document.getElementById('termBody');
+  var termRendered = false;
+  function renderTerm() {
+    if (termRendered) return;
+    termRendered = true;
+    var delay = 0;
+    bootLines.forEach(function(l){
+      var div = document.createElement('div');
+      div.className = 'term-line' + (l[0] ? ' ' + l[0] : '');
+      div.style.animationDelay = delay + 'ms';
+      div.textContent = l[1];
+      termBody.appendChild(div);
+      delay += 90;
+    });
+    var cursorLine = document.createElement('div');
+    cursorLine.className = 'term-line';
+    cursorLine.style.animationDelay = delay + 'ms';
+    cursorLine.innerHTML = '<span class="dim">$</span> <span class="term-cursor"></span>';
+    termBody.appendChild(cursorLine);
+  }
+  var origActivate = activate;
+  activate = function(name) { origActivate(name); if (name === 'terminal') renderTerm(); };
+  navItems.forEach(function(n){ n.onclick = function(){ activate(n.dataset.panel); }; });
+
+  // ---------- activity timeline (static) ----------
+  var activity = [
+    { group: 'This session', items: [
+      'Scrapped the shared-pump Recapture design entirely — rebuilt as 5 independent per-gas branches',
+      'Added dedicated Volume Pump + inline buffer Tank + relief valve per gas, pump gates on own tank pressure',
+      'Fixed atmospherics_regulation.ic10 stale comment referencing scrapped pins',
+      'P&ID bumped to Rev C — 12 IC housings, full Area 800 redraw',
+      'Rider housing rewritten to gate O2/N2 filters independently instead of following pump state',
+      'Discovered and fixed IC10 4,096-byte script cap violation (was ~5,870 bytes)',
+      'Added N2- and O2-excess triggers to Recapture — room was stuck at ~80% N2',
+      'Area 800 now shares GS-601 with Area 600 instead of a second Gas Sensor',
+      'Added CV-302/CV-303 as parallel Condensation Valve redundancy',
+      'Renamed every IC10 alias to be globally unique across the shared network'
+    ]},
+    { group: 'Earlier this project', items: [
+      'Replaced Electrolyzer with Ice Crusher gas production, relief valves on every tank',
+      'Captured Pollutant and Methane/Hydrogen instead of venting them',
+      'Split N2/O2 storage, insulated buffer tanks, closed the recapture loop',
+      "Upgraded Regulation's three pumps to Turbo Volume Pump",
+      "Reworked Area 400 CO2 supply to reuse Area 300's liquid CO2"
+    ]}
+  ];
+  var tl = document.getElementById('activityTimeline');
+  activity.forEach(function(g){
+    var label = document.createElement('div');
+    label.className = 'tl-group-label';
+    label.textContent = g.group;
+    tl.appendChild(label);
+    g.items.forEach(function(txt){
+      var row = document.createElement('div');
+      row.className = 'tl-item';
+      row.innerHTML = '<div class="tl-dot"></div><div class="tl-text">' + txt + '</div>';
+      tl.appendChild(row);
+    });
+  });
+
+  // ---------- commits (static) ----------
+  var commits = [
+    ['5754d1b', 'Scrap shared-pump Recapture, rebuild as 5 independent per-gas branches (P&ID Rev C)'],
+    ['7845c11', "Rider's O2/N2 filters gate independently, not on pump state"],
+    ['71f28ac', "Trim atmospherics_recapture.ic10 to fit IC10's 4,096-byte cap"],
+    ['a0157d8', "Add O2-excess trigger to Recapture, preemptively matching N2's fix"],
+    ['79e2757', 'Add N2-excess trigger to Recapture - room was stuck at ~80% N2'],
+    ['2cf0e20', 'Area 800 shares GS-601 with Area 600 instead of a separate Gas Sensor'],
+    ['5a2419c', 'Add CV-302/CV-303 as parallel Condensation Valve redundancy in Area 300'],
+    ['515dabc', 'Make every IC10 alias globally unique across the shared network']
+  ];
+  var cl = document.getElementById('commitList');
+  commits.forEach(function(c){
+    var row = document.createElement('div');
+    row.className = 'commit-row';
+    row.innerHTML = '<div class="hash">' + c[0] + '</div><div class="msg">' + c[1] + '</div>';
+    cl.appendChild(row);
+  });
+
+  // ---------- refresh timestamp ----------
+  var ts = '__REFRESH_TIMESTAMP__';
+  document.getElementById('hudRefreshTime').textContent = ts;
+  document.getElementById('railTimestamp').textContent = ts;
+})();
+</script>
