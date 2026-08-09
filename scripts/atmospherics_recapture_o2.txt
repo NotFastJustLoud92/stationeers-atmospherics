@@ -1,0 +1,55 @@
+alias tankPA_800o2       d0   # Pipe Analyzer on inline buffer tank (Pressure)
+alias pump_800o2         d1   # Volume Pump, blue line -> inline tank
+alias reliefValve_800o2  d2   # Digital Valve, inline tank -> exterior, overpressure backstop
+alias filtrationO2_800o2 d3   # Filtration unit, inline tank -> Area 500 O2 tank bank
+alias sensor_800o2       d4   # Gas Sensor, SAME physical device as GS-601, via its own cable
+
+# One of 5 independent per-gas branches replacing the old single shared-pump recapture
+# design (2026-08-09) - see atmospherics_recapture_co2.ic10 for the full reasoning,
+# same pattern here. Pump keeps the inline tank pre-pressurized on its own hysteresis,
+# target set above the O2 tank bank's own 40,000 kPa so the filter always sees a real
+# input-vs-output differential. Filter itself still gates on room O2 excess (same
+# partial-pressure hysteresis as atmospherics_recapture.ic10 used to compute), not on
+# tank pressure - the tank just keeps gas ready.
+define TANK_TARGET 44000
+define TANK_LOW    42000
+define RELIEF_HIGH 50000
+define RELIEF_LOW  48000
+define O2_HIGH     20
+define O2_LOW      19
+
+main:
+yield
+
+l r0 tankPA_800o2 Pressure
+l r1 pump_800o2 On
+beqz r1 pump_off
+slt r2 r0 TANK_TARGET
+j pump_set
+pump_off:
+slt r2 r0 TANK_LOW
+pump_set:
+s pump_800o2 On r2
+
+l r3 reliefValve_800o2 On
+beqz r3 relief_off
+sgt r4 r0 RELIEF_LOW
+j relief_set
+relief_off:
+sgt r4 r0 RELIEF_HIGH
+relief_set:
+s reliefValve_800o2 On r4
+
+l r5 sensor_800o2 Pressure
+l r6 sensor_800o2 RatioOxygen
+mul r6 r6 r5
+l r7 filtrationO2_800o2 On
+beqz r7 o2_off
+sgt r8 r6 O2_LOW
+j o2_set
+o2_off:
+sgt r8 r6 O2_HIGH
+o2_set:
+s filtrationO2_800o2 On r8
+
+j main

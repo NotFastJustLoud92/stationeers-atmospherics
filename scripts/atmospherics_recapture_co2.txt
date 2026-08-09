@@ -1,0 +1,58 @@
+alias tankPA_800co2        d0   # Pipe Analyzer on inline buffer tank (Pressure)
+alias pump_800co2          d1   # Volume Pump, blue line -> inline tank
+alias reliefValve_800co2   d2   # Digital Valve, inline tank -> exterior, overpressure backstop
+alias filtrationCO2_800co2 d3   # Filtration unit, inline tank -> Area 400 TK-401
+alias sensor_800co2        d4   # Gas Sensor, SAME physical device as GS-601, via its own cable
+
+# One of 5 independent per-gas branches replacing the old single shared-pump recapture
+# design (2026-08-09) - each gas gets its own dedicated pump + inline buffer tank +
+# relief valve + filter, instead of all 5 filters sharing one manifold off one pump.
+# Pump keeps the inline tank pre-pressurized (hysteresis on the tank's OWN pressure,
+# same pattern as Area 200's compression stage) so the filter always has a strong
+# input-vs-output differential the instant it's needed - Filtration throughput stalls
+# when output pressure >= input pressure, so pulling straight from the ~100 kPa blue
+# line into a high-pressure destination was slow. Filter still gates on room CO2
+# excess (same partial-pressure hysteresis as before), independent of tank pressure -
+# the tank just keeps gas ready.
+define TANK_TARGET 4500
+define TANK_LOW    4300
+define RELIEF_HIGH 6000
+define RELIEF_LOW  5500
+define CO2_HIGH    20
+define CO2_LOW     19
+
+main:
+yield
+
+l r0 tankPA_800co2 Pressure
+l r1 pump_800co2 On
+beqz r1 pump_off
+slt r2 r0 TANK_TARGET
+j pump_set
+pump_off:
+slt r2 r0 TANK_LOW
+pump_set:
+s pump_800co2 On r2
+
+l r3 reliefValve_800co2 On
+beqz r3 relief_off
+sgt r4 r0 RELIEF_LOW
+j relief_set
+relief_off:
+sgt r4 r0 RELIEF_HIGH
+relief_set:
+s reliefValve_800co2 On r4
+
+l r5 sensor_800co2 Pressure
+l r6 sensor_800co2 RatioCarbonDioxide
+mul r6 r6 r5
+l r7 filtrationCO2_800co2 On
+beqz r7 co2_off
+sgt r8 r6 CO2_LOW
+j co2_set
+co2_off:
+sgt r8 r6 CO2_HIGH
+co2_set:
+s filtrationCO2_800co2 On r8
+
+j main

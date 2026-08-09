@@ -1,0 +1,45 @@
+alias tankPA_800pol              d0   # Pipe Analyzer on inline buffer tank (Pressure)
+alias pump_800pol                d1   # Volume Pump, blue line -> inline tank
+alias reliefValve_800pol         d2   # Digital Valve, inline tank -> exterior, overpressure backstop
+alias filtrationPollutant_800pol d3   # Filtration unit, inline tank -> Pollutant storage tank
+alias sensor_800pol              d4   # Gas Sensor, SAME physical device as GS-601, via its own cable
+
+# One of 5 independent per-gas branches replacing the old single shared-pump recapture
+# design (2026-08-09) - see atmospherics_recapture_co2.ic10 for the full reasoning,
+# same pattern here. Pump keeps the inline tank pre-pressurized on its own hysteresis;
+# filter gates independently on bare presence of Pollutant in the room (no target
+# level - any trace at all should be scrubbed), not on tank pressure.
+# Placeholder tank/relief targets - no destination-tank pressure to reference yet
+# (TK-802 has no active target), tune once running.
+define TANK_TARGET 2000
+define TANK_LOW    1800
+define RELIEF_HIGH 3000
+define RELIEF_LOW  2800
+
+main:
+yield
+
+l r0 tankPA_800pol Pressure
+l r1 pump_800pol On
+beqz r1 pump_off
+slt r2 r0 TANK_TARGET
+j pump_set
+pump_off:
+slt r2 r0 TANK_LOW
+pump_set:
+s pump_800pol On r2
+
+l r3 reliefValve_800pol On
+beqz r3 relief_off
+sgt r4 r0 RELIEF_LOW
+j relief_set
+relief_off:
+sgt r4 r0 RELIEF_HIGH
+relief_set:
+s reliefValve_800pol On r4
+
+l r5 sensor_800pol RatioPollutant
+sgt r6 r5 0
+s filtrationPollutant_800pol On r6
+
+j main
