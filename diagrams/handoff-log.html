@@ -356,6 +356,7 @@
     <span class="chip ok"><span class="dot"></span>AREA 800 SHARES GS-601 WITH AREA 600, NO SEPARATE GAS SENSOR (2026-08-08)</span>
     <span class="chip issue"><span class="dot"></span>ROOM STUCK AT ~80/12/7 N2/O2/CO2 — RECAPTURE N2-EXCESS TRIGGER ADDED (2026-08-09)</span>
     <span class="chip ok"><span class="dot"></span>O2-EXCESS TRIGGER ADDED PREEMPTIVELY, SAME PATTERN AS N2 (2026-08-09)</span>
+    <span class="chip issue"><span class="dot"></span>RECAPTURE.IC10 EXCEEDED THE 4,096-BYTE IC10 CAP — TRIMMED (2026-08-09)</span>
   </div>
 
   <section class="panel">
@@ -519,6 +520,14 @@
         <span class="tag done">2026-08-09</span>
         <span class="body"><strong>O2 gets the same excess trigger too, added preemptively.</strong> Ryan's call after confirming the N2 fix — the same underlying gap (add-only, no remove-path) was true for O2 as well, it just hadn't caused a visible problem yet since O2 was reading under target (~12% vs. 20%) at the time, not over. Same pattern exactly: <code>O2_HIGH</code>/<code>O2_LOW</code> (20/19, matching Regulation's own <code>O2_TARGET</code>/<code>O2_LOW</code>), one more <code>RatioOxygen</code> read off the already-wired <code>sensor_800</code>, a second bare-register hysteresis memory (<code>r15</code>), folded into the pump's trigger set alongside CO2/N2/Pollutant/Methane/Hydrogen. <code>filtrationO2_800r</code> on the rider housing needed no changes, same reasoning as N2's filter. This trigger simply won't fire until O2 actually ends up in excess later.</span>
       </li>
+      <li class="check-item">
+        <span class="tag issue">Bug found</span>
+        <span class="body"><strong><code>atmospherics_recapture.ic10</code> had grown past IC10's hard 4,096-byte script size cap — ~5,870 bytes, comments included.</strong> Ryan caught this; a script over the cap can't be loaded onto the chip at all, so the version with the N2/O2-excess triggers above was never actually deployable as written. Root cause: this project's documentation habit of writing long multi-paragraph "why" comments directly into each script's alias/define block, which had been accumulating unchecked across every edit this session.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-09</span>
+        <span class="body"><strong>Fixed: trimmed to ~1,820 bytes, functionally identical.</strong> Cut the in-script comments down to one short paragraph per script instead of the multi-paragraph "why" blocks used elsewhere in this build; no instructions, aliases, or logic changed — verified by diffing the stripped instruction sequence before/after. The detailed reasoning that used to live in those comments isn't lost, it's captured in this handoff log's changelog entries instead (see above and throughout). Checked all 9 active scripts against the cap — only <code>atmospherics_recapture.ic10</code> was over; the rest are comfortably under (largest ~2,750 bytes). Going forward, in-script comments in this build should stay terse — one line per alias/define, a short paragraph at most for anything genuinely non-obvious — with the full narrative living here in the handoff log instead, not duplicated into the script itself.</span>
+      </li>
     </ul>
 
     <hr class="rule">
@@ -602,6 +611,7 @@
       <li class="source-item"><strong>Liquid Digital Valve is a real, separate device from the regular (gas-side) Digital Valve</strong> — confirmed directly by Ryan after this was flagged as an open question. Used for TK-301's relief valve since that tank sits on a liquid pipe network, not a gas one.<span class="src">Confirmed directly by Ryan</span></li>
       <li class="source-item"><strong>"Volatiles" was renamed to "Methane" in a game update; Hydrogen is a separate gas type entirely.</strong> Full in-game gas enum: Oxygen, Nitrogen, Carbon Dioxide, Volatiles/Methane, Pollutant, Water, Nitrous Oxide, plus liquid variants of each, and Hydrogen/Liquid Hydrogen (added separately — combusts into pure water when reacting with oxygen, used as rocket fuel). Confirms Methane and Hydrogen are two distinct gases, not two names for the same thing — matters here because <code>atmospherics_recapture.ic10</code>'s old <code>filtrationVolatiles</code> only ever handled Methane; Hydrogen needed its own filter cartridge added to the same unit.<span class="src">StationeersLua enum docs (orbitalfoundrymodteam.github.io), Filtration wiki page</span></li>
       <li class="source-item"><strong>Volatile Ice melts into Methane + Hydrogen gas.</strong> Same ice-mining family as Oxite (→O2/N2) and Nitrice (→N2O) — each ice type breaks down into a specific gas pair when processed or melted. If Volatile Ice ends up inside the base (a real hazard: hauled in on a haulage run, dropped, carried through an airlock), it releases both gases directly into the room atmosphere — this is why Ryan wants Recapture to treat any Methane or Hydrogen reading the same way it already treats Pollutant, as something to scrub immediately rather than tolerate.<span class="src">Confirmed directly by Ryan; Ice (Oxite)/Ice Crusher wiki entries for the broader ice-type pattern</span></li>
+      <li class="source-item"><strong>Every IC10 script has a hard 4,096-byte size cap, comments included.</strong> A script that exceeds it can't be loaded onto the chip at all. <code>atmospherics_recapture.ic10</code> hit this directly — it had grown to ~5,870 bytes with this project's usual heavily-commented documentation style, well over the limit. Trimmed to ~1,820 bytes by cutting the in-script prose down to one short comment block; the full reasoning that used to live in those comments is preserved in this handoff log's changelog entries instead, not lost. This build's other 8 active scripts are all comfortably under the cap (largest is ~2,750 bytes) but worth checking byte count (<code>wc -c</code> on the <code>.txt</code> file) after any future edit that adds substantial commentary.<span class="src">Confirmed directly by Ryan</span></li>
     </ul>
     <p class="muted" style="margin-top:14px;">One source (a Substack "Thermal Conditioning &amp; Gas Separation" guide) surfaced oddly-named devices ("TEC-V", "PGL filtration") that don't match any known vanilla Stationeers device — likely a heavily-modded build or a bad fetch/summary. Its specific numbers (293–303K window, 13.79 kPa/K ratio, 48,636 kPa max) were <strong>not</strong> used anywhere in this design; treat that source as unreliable.</p>
   </section>
@@ -997,84 +1007,32 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop, main housing · 5 pins · N2- and O2-excess triggers added (2026-08-09)</span></div>
-      <pre>alias sensor_800              d0   <span class="c"># Gas Sensor, shared room - SAME physical device as GS-601/sensor_600 in atmospherics_regulation.ic10, wired here on a second cable, not a separate unit</span>
-alias recyclePump_800         d1   <span class="c"># Volume Pump, pulls room air into the filtration manifold</span>
-alias filtrationCO2_800       d2   <span class="c"># Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401</span>
-alias filtrationPollutant_800 d3   <span class="c"># Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank</span>
-alias filtrationMethaneH2_800 d4   <span class="c"># Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank</span>
+      <div class="script-tab"><span class="name">atmospherics_recapture.ic10</span><span class="housing">Area 800 · Recapture loop, main housing · 5 pins · trimmed to fit IC10's 4,096-byte cap, was ~5,870 bytes (2026-08-09)</span></div>
+      <pre>alias sensor_800              d0   <span class="c"># Gas Sensor, shared w/ GS-601 (atmospherics_regulation.ic10) via 2nd cable</span>
+alias recyclePump_800         d1   <span class="c"># Volume Pump, pulls room air into filtration manifold</span>
+alias filtrationCO2_800       d2   <span class="c"># CO2 filter -> Area 400 TK-401</span>
+alias filtrationPollutant_800 d3   <span class="c"># Pollutant filter -> Pollutant tank</span>
+alias filtrationMethaneH2_800 d4   <span class="c"># Methane+Hydrogen (2 cartridges, 1 unit) -> mix tank</span>
 
-<span class="c"># Every gas this loop touches goes to a tank now, not back into the room - the only
-# thing that ever adds gas to the room atmosphere is Regulation's three pumps
-# (atmospherics_regulation.ic10). That's why there's no "remainder" path here anymore:
-# whatever this pump pulls in gets fully sorted - O2, CO2, and N2 each to their own
-# supply tank; Pollutant to its own storage tank; Methane and Hydrogen together into
-# one mix tank.
-#
-# "Volatiles" was renamed to "Methane" in a game update - same gas, RatioVolatiles is
-# now RatioMethane. Hydrogen is a genuinely separate gas type, not part of Methane -
-# it wasn't handled anywhere in this build before (the old Electrolyzer just vented
-# its H2 byproduct to exterior, and that housing is gone now).
-#
-# filtrationMethaneH2_800 is ONE Filtration unit with both a Methane filter and a
-# Hydrogen filter cartridge loaded - multiple cartridges in the same unit mix their
-# catch together, which is exactly what's wanted here since both go to the same mix
-# tank anyway. This is a safety contingency: Volatile Ice melts into Methane +
-# Hydrogen if it ends up inside the base (hauled in, dropped, whatever), and neither
-# belongs in the room atmosphere. Ryan's rule: any Pollutant, Methane, or Hydrogen
-# reading at all should trigger scrubbing until it's filtered out - same bare-presence
-# pattern already used for Pollutant. Each filter only turns on for its own gas(es)
-# being present, not just because the pump happens to be running for some other reason.
-#
-# O2's Filtration unit lives on a companion housing (atmospherics_recapture_riders.ic10),
-# not this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor,
-# pump, and 5 filters), so it's split in two. filtrationO2_800r just mirrors this
-# housing's recyclePump_800 On state, same as N2's filter does.
-#
-# N2 got a real excess trigger on 2026-08-09 (see below) after Ryan found the room
-# sitting at ~80% N2 with nothing anywhere in this build actively skimming a surplus
-# back down. O2 gets the same treatment now too, added preemptively rather than waiting
-# for O2 to actually run high - Ryan's call, since it's the same cheap fix (one more
-# sensor read off the already-wired sensor_800, no new pins) and the underlying gap
-# (add-only, no remove-path) was identical for both gases. At the time this was added
-# O2 was reading under target (~12% vs. 20%), not over - this trigger just won't fire
-# until O2 actually does end up in excess later, e.g. once gas production ramps up.
-#
-# CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%,
-# only the excess above target gets skimmed. N2 and O2's bands work the same way, using
-# the same target/low values Regulation's own N2_TARGET/N2_LOW and O2_TARGET/O2_LOW use,
-# so all three subsystems agree on where their equilibrium sits - Regulation stops
-# adding at the target, Recapture starts skimming above it, both settle back to inactive
-# in the gap between LOW and TARGET. Pollutant, Methane, and Hydrogen still have no
-# target at all - no "acceptable" amount of any of them, so those trigger on bare
-# presence (ratio > 0), no hysteresis band to hover near.
-#
-# N2 and O2's hysteresis memory (r12 and r15 below) are bare registers, not a device's
-# own On state, unlike every other hysteresis check in this build - the devices that
-# actually act on these triggers (filtrationN2_800r, filtrationO2_800r) live on the
-# rider housing and aren't wired to any pin here, so there's no local device state to
-# read back. Registers persist across yield/j main loop iterations same as any other
-# IC10 program, so a register works fine as this housing's own memory of whether a gas
-# was in its "on" phase last tick.
-#
-# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
-# housings share one network, so alias names need to be globally unique. This housing
-# gets "_800"; its companion (atmospherics_recapture_riders.ic10) gets "_800r".</span>
+<span class="c"># Everything captured goes to a tank, nothing returns to room - only Regulation adds gas.
+# RatioVolatiles is now RatioMethane (game rename). Hydrogen is separate from Methane.
+# O2/N2 filters live on atmospherics_recapture_riders.ic10 (_800r), mirror pump state.
+# CO2/N2/O2 skim above target (hysteresis); Pollutant/Methane/H2 trigger on any presence.
+# N2/O2 hysteresis memory (r12/r15) are bare registers since the acting filter is on the
+# rider housing, not wired here.</span>
 define CO2_HIGH 20
 define CO2_LOW  19
-
-define N2_HIGH 60
-define N2_LOW  58
-
-define O2_HIGH 20
-define O2_LOW  19
+define N2_HIGH  60
+define N2_LOW   58
+define O2_HIGH  20
+define O2_LOW   19
 
 main:
 yield
 
 l r0 sensor_800 Pressure
 l r1 sensor_800 RatioCarbonDioxide
-mul r1 r1 r0   <span class="c"># CO2 partial pressure</span>
+mul r1 r1 r0
 
 l r2 filtrationCO2_800 On
 beqz r2 co2_off
@@ -1097,28 +1055,25 @@ max r7 r7 r9
 s filtrationMethaneH2_800 On r7
 
 l r11 sensor_800 RatioNitrogen
-mul r11 r11 r0   <span class="c"># N2 partial pressure</span>
-
+mul r11 r11 r0
 beqz r12 n2_off
 sgt r13 r11 N2_LOW
 j n2_set
 n2_off:
 sgt r13 r11 N2_HIGH
 n2_set:
-move r12 r13   <span class="c"># persist for next tick's hysteresis check - see comment above</span>
+move r12 r13
 
 l r14 sensor_800 RatioOxygen
-mul r14 r14 r0   <span class="c"># O2 partial pressure</span>
-
+mul r14 r14 r0
 beqz r15 o2_off
 sgt r13 r14 O2_LOW
 j o2_set
 o2_off:
 sgt r13 r14 O2_HIGH
 o2_set:
-move r15 r13   <span class="c"># persist for next tick's hysteresis check - see comment above</span>
+move r15 r13
 
-<span class="c"># Pump runs whenever any one of the five triggers above is active</span>
 max r10 r3 r5
 max r10 r10 r7
 max r10 r10 r12

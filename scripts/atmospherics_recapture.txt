@@ -1,79 +1,28 @@
-alias sensor_800              d0   # Gas Sensor, shared room - SAME physical device as GS-601/sensor_600 in atmospherics_regulation.ic10, wired here on a second cable, not a separate unit
-alias recyclePump_800         d1   # Volume Pump, pulls room air into the filtration manifold
-alias filtrationCO2_800       d2   # Filtration unit, CO2 filter only - recovered CO2 -> Area 400 TK-401
-alias filtrationPollutant_800 d3   # Filtration unit, Pollutant filter - captured gas -> Pollutant storage tank
-alias filtrationMethaneH2_800 d4   # Filtration unit, BOTH Methane and Hydrogen cartridges loaded - captured gas -> combined Methane/Hydrogen mix tank
+alias sensor_800              d0   # Gas Sensor, shared w/ GS-601 (atmospherics_regulation.ic10) via 2nd cable
+alias recyclePump_800         d1   # Volume Pump, pulls room air into filtration manifold
+alias filtrationCO2_800       d2   # CO2 filter -> Area 400 TK-401
+alias filtrationPollutant_800 d3   # Pollutant filter -> Pollutant tank
+alias filtrationMethaneH2_800 d4   # Methane+Hydrogen (2 cartridges, 1 unit) -> mix tank
 
-# Every gas this loop touches goes to a tank now, not back into the room - the only thing
-# that ever adds gas to the room atmosphere is Regulation's three pumps (atmospherics_
-# regulation.ic10). That's why there's no "remainder" path here anymore: whatever this pump
-# pulls in gets fully sorted - O2, CO2, and N2 each to their own supply tank; Pollutant to
-# its own storage tank; Methane and Hydrogen together into one mix tank.
-#
-# "Volatiles" was renamed to "Methane" in a game update - same gas, RatioVolatiles is now
-# RatioMethane. Hydrogen is a genuinely separate gas type, not part of Methane/Volatiles -
-# it wasn't handled anywhere in this build before (the old Electrolyzer just vented its H2
-# byproduct to exterior, and that housing is gone now).
-#
-# filtrationMethaneH2_800 is ONE Filtration unit with both a Methane filter and a Hydrogen
-# filter cartridge loaded - multiple cartridges in the same unit mix their catch together,
-# which is exactly what's wanted here since both go to the same mix tank anyway. This is
-# a safety contingency: Volatile Ice melts into Methane + Hydrogen if it ends up inside the
-# base (hauled in, dropped, whatever), and neither gas belongs in the room atmosphere.
-# Ryan's rule: any Pollutant, Methane, or Hydrogen reading at all should trigger scrubbing
-# until it's filtered out - same bare-presence pattern already used for Pollutant. Each
-# filter only turns on for its own gas(es) being present, not just because the pump happens
-# to be running for some other reason.
-#
-# O2's Filtration unit lives on a companion housing (atmospherics_recapture_riders.ic10),
-# not this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump,
-# and 5 filters), so it's split in two. filtrationO2_800r just mirrors this housing's
-# recyclePump_800 On state, same as N2's filter does.
-#
-# N2 got a real excess trigger on 2026-08-09 (see below) after Ryan found the room sitting
-# at ~80% N2 with nothing anywhere in this build actively skimming a surplus back down.
-# O2 gets the same treatment now too, added preemptively rather than waiting for O2 to
-# actually run high - Ryan's call, since it's the same cheap fix (one more sensor read off
-# the already-wired sensor_800, no new pins) and the underlying gap (add-only, no
-# remove-path) was identical for both gases. At the time this was added O2 was reading
-# under target (~12% vs. 20%), not over - this trigger just won't fire until O2 actually
-# does end up in excess later, e.g. once gas production ramps up.
-#
-# CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%, only
-# the excess above target gets skimmed. N2 and O2's bands work the same way, using the same
-# target/low values Regulation's own N2_TARGET/N2_LOW and O2_TARGET/O2_LOW use, so all three
-# subsystems agree on where their equilibrium sits - Regulation stops adding at the target,
-# Recapture starts skimming above it, both settle back to inactive in the gap between LOW
-# and TARGET. Pollutant, Methane, and Hydrogen still have no target at all - no "acceptable"
-# amount of any of them, so those trigger on bare presence (ratio > 0), no hysteresis band
-# to hover near.
-#
-# N2 and O2's hysteresis memory (r12 and r15 below) are bare registers, not a device's own
-# On state, unlike every other hysteresis check in this build - the devices that actually
-# act on these triggers (filtrationN2_800r, filtrationO2_800r) live on the rider housing and
-# aren't wired to any pin here, so there's no local device state to read back. Registers
-# persist across yield/j main loop iterations same as any other IC10 program, so a register
-# works fine as this housing's own memory of whether a gas was in its "on" phase last tick.
-#
-# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
-# share one network, so alias names need to be globally unique, not just unique within a
-# single script. This housing gets "_800"; its companion (atmospherics_recapture_riders.ic10)
-# gets "_800r".
+# Everything captured goes to a tank, nothing returns to room - only Regulation adds gas.
+# RatioVolatiles is now RatioMethane (game rename). Hydrogen is separate from Methane.
+# O2/N2 filters live on atmospherics_recapture_riders.ic10 (_800r), mirror pump state.
+# CO2/N2/O2 skim above target (hysteresis); Pollutant/Methane/H2 trigger on any presence.
+# N2/O2 hysteresis memory (r12/r15) are bare registers since the acting filter is on the
+# rider housing, not wired here.
 define CO2_HIGH 20
 define CO2_LOW  19
-
-define N2_HIGH 60
-define N2_LOW  58
-
-define O2_HIGH 20
-define O2_LOW  19
+define N2_HIGH  60
+define N2_LOW   58
+define O2_HIGH  20
+define O2_LOW   19
 
 main:
 yield
 
 l r0 sensor_800 Pressure
 l r1 sensor_800 RatioCarbonDioxide
-mul r1 r1 r0   # CO2 partial pressure
+mul r1 r1 r0
 
 l r2 filtrationCO2_800 On
 beqz r2 co2_off
@@ -96,28 +45,25 @@ max r7 r7 r9
 s filtrationMethaneH2_800 On r7
 
 l r11 sensor_800 RatioNitrogen
-mul r11 r11 r0   # N2 partial pressure
-
+mul r11 r11 r0
 beqz r12 n2_off
 sgt r13 r11 N2_LOW
 j n2_set
 n2_off:
 sgt r13 r11 N2_HIGH
 n2_set:
-move r12 r13   # persist for next tick's hysteresis check - see comment above
+move r12 r13
 
 l r14 sensor_800 RatioOxygen
-mul r14 r14 r0   # O2 partial pressure
-
+mul r14 r14 r0
 beqz r15 o2_off
 sgt r13 r14 O2_LOW
 j o2_set
 o2_off:
 sgt r13 r14 O2_HIGH
 o2_set:
-move r15 r13   # persist for next tick's hysteresis check - see comment above
+move r15 r13
 
-# Pump runs whenever any one of the five triggers above is active
 max r10 r3 r5
 max r10 r10 r7
 max r10 r10 r12
