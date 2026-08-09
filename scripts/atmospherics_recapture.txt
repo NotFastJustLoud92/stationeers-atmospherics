@@ -25,39 +25,35 @@ alias filtrationMethaneH2_800 d4   # Filtration unit, BOTH Methane and Hydrogen 
 # filter only turns on for its own gas(es) being present, not just because the pump happens
 # to be running for some other reason.
 #
-# O2 is controlled by a companion housing (atmospherics_recapture_riders.ic10), not this one
-# - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump, and 5
-# filters), so it's split in two. O2 has no trigger of its own; its filter just mirrors this
-# housing's recyclePump_800 On state, riding along opportunistically whenever the pump is on
-# for any reason, since O2 is a wanted gas, not "gas that isn't wanted" like
-# Pollutant/Methane/Hydrogen.
+# O2's Filtration unit lives on a companion housing (atmospherics_recapture_riders.ic10),
+# not this one - one IC housing only has 6 pins and this loop needs 7 devices (sensor, pump,
+# and 5 filters), so it's split in two. filtrationO2_800r just mirrors this housing's
+# recyclePump_800 On state, same as N2's filter does.
 #
-# N2's Filtration unit also lives on the rider housing (filtrationN2_800r) and also just
-# mirrors the pump's On state - but as of 2026-08-09 N2 DOES get a real trigger, computed
-# right here even though the device that acts on it is on the other housing. Ryan found the
-# room sitting at ~80% N2 (vs. the 60% target) with nothing anywhere in this build actively
-# skimming an N2 surplus back down: Regulation only ever ADDS N2 (stops once at target, never
-# removes), and this housing previously only ever ran the pump for CO2 excess or
-# contamination - a pure N2 surplus with nothing else active just sat there unrecaptured
-# indefinitely. Fixed by giving N2 the same excess-hysteresis treatment CO2 already has
-# below, folded into the pump's own trigger set - once the pump turns on for N2 excess, the
-# rider housing's existing "mirror the pump" logic for filtrationN2_800r picks it up
-# automatically, no change needed on that housing at all.
+# N2 got a real excess trigger on 2026-08-09 (see below) after Ryan found the room sitting
+# at ~80% N2 with nothing anywhere in this build actively skimming a surplus back down.
+# O2 gets the same treatment now too, added preemptively rather than waiting for O2 to
+# actually run high - Ryan's call, since it's the same cheap fix (one more sensor read off
+# the already-wired sensor_800, no new pins) and the underlying gap (add-only, no
+# remove-path) was identical for both gases. At the time this was added O2 was reading
+# under target (~12% vs. 20%), not over - this trigger just won't fire until O2 actually
+# does end up in excess later, e.g. once gas production ramps up.
 #
 # CO2 keeps its hysteresis band, same as before - CO2 belongs in the room mix at 20%, only
-# the excess above target gets skimmed. N2's new band works the same way, using the same
-# 60/58 target/low Regulation's own N2_TARGET/N2_LOW use, so the two subsystems agree on
-# where the equilibrium sits - Regulation stops adding at 60, Recapture starts skimming above
-# 60, both settle back to inactive between 58 and 60. Pollutant, Methane, and Hydrogen still
-# have no target at all - no "acceptable" amount of any of them, so those trigger on bare
-# presence (ratio > 0), no hysteresis band to hover near.
+# the excess above target gets skimmed. N2 and O2's bands work the same way, using the same
+# target/low values Regulation's own N2_TARGET/N2_LOW and O2_TARGET/O2_LOW use, so all three
+# subsystems agree on where their equilibrium sits - Regulation stops adding at the target,
+# Recapture starts skimming above it, both settle back to inactive in the gap between LOW
+# and TARGET. Pollutant, Methane, and Hydrogen still have no target at all - no "acceptable"
+# amount of any of them, so those trigger on bare presence (ratio > 0), no hysteresis band
+# to hover near.
 #
-# N2's hysteresis memory (r12 below) is a bare register, not a device's own On state, unlike
-# every other hysteresis check in this build - the device that actually acts on this trigger
-# (filtrationN2_800r) lives on the rider housing and isn't wired to any pin here, so there's
-# no local device state to read back. Registers persist across yield/j main loop iterations
-# same as any other IC10 program, so r12 works fine as this housing's own memory of whether
-# N2 was in its "on" phase last tick.
+# N2 and O2's hysteresis memory (r12 and r15 below) are bare registers, not a device's own
+# On state, unlike every other hysteresis check in this build - the devices that actually
+# act on these triggers (filtrationN2_800r, filtrationO2_800r) live on the rider housing and
+# aren't wired to any pin here, so there's no local device state to read back. Registers
+# persist across yield/j main loop iterations same as any other IC10 program, so a register
+# works fine as this housing's own memory of whether a gas was in its "on" phase last tick.
 #
 # Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
 # share one network, so alias names need to be globally unique, not just unique within a
@@ -68,6 +64,9 @@ define CO2_LOW  19
 
 define N2_HIGH 60
 define N2_LOW  58
+
+define O2_HIGH 20
+define O2_LOW  19
 
 main:
 yield
@@ -107,10 +106,22 @@ sgt r13 r11 N2_HIGH
 n2_set:
 move r12 r13   # persist for next tick's hysteresis check - see comment above
 
-# Pump runs whenever any one of the four triggers above is active
+l r14 sensor_800 RatioOxygen
+mul r14 r14 r0   # O2 partial pressure
+
+beqz r15 o2_off
+sgt r13 r14 O2_LOW
+j o2_set
+o2_off:
+sgt r13 r14 O2_HIGH
+o2_set:
+move r15 r13   # persist for next tick's hysteresis check - see comment above
+
+# Pump runs whenever any one of the five triggers above is active
 max r10 r3 r5
 max r10 r10 r7
 max r10 r10 r12
+max r10 r10 r15
 s recyclePump_800 On r10
 
 j main
