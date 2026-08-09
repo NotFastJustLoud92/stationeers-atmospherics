@@ -1,32 +1,48 @@
-alias pumpState_800r    d0   # reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to
-alias filtrationO2_800r d1   # Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank
-alias filtrationN2_800r d2   # Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302
+alias sensor_800r       d0   # Gas Sensor, SAME physical device as sensor_800/GS-601, via a 3rd cable
+alias filtrationO2_800r d1   # O2 filter only - recovered O2 -> Area 500 O2 tank bank
+alias filtrationN2_800r d2   # N2 filter only - recovered N2 -> Area 300 TK-302
 
-# Both filters here just mirror the main housing's pump state - neither has its own trigger
-# logic on this housing, and neither needs its own room sensor, just a read on the pump's
-# current state.
-#
-# As of 2026-08-09, N2 and O2 both DO have real excess triggers now, they just live on the
-# main housing (atmospherics_recapture.ic10), not here. Ryan found the room sitting at ~80%
-# N2 with nothing anywhere in this build actively skimming a surplus back down, so the main
-# housing folds N2-excess (and, added preemptively, O2-excess) hysteresis checks into its
-# pump decision. This housing's logic for filtrationN2_800r/filtrationO2_800r didn't need to
-# change at all to pick that up - each already turns on whenever the pump does, for whatever
-# reason the pump has, whether that's CO2/N2/O2 excess or Pollutant/Methane/Hydrogen present.
-#
-# This is the companion to atmospherics_recapture.ic10, split out because one IC housing
-# only has 6 pins and the full recapture loop (sensor, pump, 5 filters) needs 7 devices.
-#
-# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC housings
-# share one network, so alias names need to be globally unique, not just unique within a
-# single script. This housing gets "_800r" ("r" for rider) to stay distinct from the main
-# housing's "_800" and from Area 300/500's own filtrationO2/filtrationN2 aliases.
+# Each filter gates on its OWN gas's excess partial pressure now (same math
+# atmospherics_recapture.ic10 uses for CO2/N2/O2 on the pump), instead of blindly
+# mirroring the pump's On state. So a CO2 flooding event (e.g. 70% CO2/18% N2/12%
+# O2, overpressure) only trips the CO2 filter - N2/O2 stay off since their own
+# partial pressure isn't over target, even though the pump is running for CO2.
+# If the ratio later settles near 60/20/20 while pressure stays elevated, all
+# three gases' partial pressures cross their own threshold together, so all three
+# filters naturally turn on together too - no separate "stable ratio" check
+# needed, it falls out of using partial pressure (ratio x total pressure) rather
+# than raw ratio. No pump read needed here anymore - atmospherics_recapture.ic10
+# already brings the pump online whenever N2 or O2 is independently in excess,
+# since it watches the same physical sensor with the same thresholds.
+define N2_HIGH 60
+define N2_LOW  58
+define O2_HIGH 20
+define O2_LOW  19
 
 main:
 yield
 
-l r0 pumpState_800r On
-s filtrationO2_800r On r0
-s filtrationN2_800r On r0
+l r0 sensor_800r Pressure
+l r1 sensor_800r RatioNitrogen
+mul r1 r1 r0
+l r2 filtrationN2_800r On
+beqz r2 n2_off
+sgt r3 r1 N2_LOW
+j n2_set
+n2_off:
+sgt r3 r1 N2_HIGH
+n2_set:
+s filtrationN2_800r On r3
+
+l r4 sensor_800r RatioOxygen
+mul r4 r4 r0
+l r5 filtrationO2_800r On
+beqz r5 o2_off
+sgt r6 r4 O2_LOW
+j o2_set
+o2_off:
+sgt r6 r4 O2_HIGH
+o2_set:
+s filtrationO2_800r On r6
 
 j main

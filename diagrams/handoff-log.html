@@ -357,6 +357,7 @@
     <span class="chip issue"><span class="dot"></span>ROOM STUCK AT ~80/12/7 N2/O2/CO2 — RECAPTURE N2-EXCESS TRIGGER ADDED (2026-08-09)</span>
     <span class="chip ok"><span class="dot"></span>O2-EXCESS TRIGGER ADDED PREEMPTIVELY, SAME PATTERN AS N2 (2026-08-09)</span>
     <span class="chip issue"><span class="dot"></span>RECAPTURE.IC10 EXCEEDED THE 4,096-BYTE IC10 CAP — TRIMMED (2026-08-09)</span>
+    <span class="chip ok"><span class="dot"></span>RIDER'S O2/N2 FILTERS NOW GATE INDEPENDENTLY, NOT ON PUMP STATE (2026-08-09)</span>
   </div>
 
   <section class="panel">
@@ -405,7 +406,7 @@
           <tr>
             <td><span class="swatch" style="background:#e2695a"></span>Recapture Loop <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint);">Area 800</span></td>
             <td class="mono">Recycle Pump → 5× Filtration (O2 / CO2 / N2 / Pollutant / Methane+Hydrogen), 2 IC housings</td>
-            <td>Rebuilt 2026-08-07, extended 2026-08-07: O2, CO2, and N2 each route to their own supply tank; Pollutant and Methane+Hydrogen (one Filtration unit, two cartridges) now route to dedicated storage tanks instead of venting — Volatile Ice safety contingency, see below. No return-to-room path at all. Split across <code>atmospherics_recapture.ic10</code> (main) + <code>atmospherics_recapture_riders.ic10</code> (companion) — 7 devices needs more pins than one housing has. Pump triggers on CO2, N2, or O2 excess (N2 and O2 both added 2026-08-09), or any Pollutant/Methane/Hydrogen present.</td>
+            <td>Rebuilt 2026-08-07, extended 2026-08-07: O2, CO2, and N2 each route to their own supply tank; Pollutant and Methane+Hydrogen (one Filtration unit, two cartridges) now route to dedicated storage tanks instead of venting — Volatile Ice safety contingency, see below. No return-to-room path at all. Split across <code>atmospherics_recapture.ic10</code> (main) + <code>atmospherics_recapture_riders.ic10</code> (companion) — 7 devices needs more pins than one housing has. Pump triggers on CO2, N2, or O2 excess (N2 and O2 both added 2026-08-09), or any Pollutant/Methane/Hydrogen present. O2/N2 filters gate independently on their own excess partial pressure (own sensor cable, 2026-08-09) — a CO2-dominated event only filters CO2, not gases that are still deficient.</td>
           </tr>
         </tbody>
       </table>
@@ -527,6 +528,10 @@
       <li class="check-item">
         <span class="tag done">2026-08-09</span>
         <span class="body"><strong>Fixed: trimmed to ~1,820 bytes, functionally identical.</strong> Cut the in-script comments down to one short paragraph per script instead of the multi-paragraph "why" blocks used elsewhere in this build; no instructions, aliases, or logic changed — verified by diffing the stripped instruction sequence before/after. The detailed reasoning that used to live in those comments isn't lost, it's captured in this handoff log's changelog entries instead (see above and throughout). Checked all 9 active scripts against the cap — only <code>atmospherics_recapture.ic10</code> was over; the rest are comfortably under (largest ~2,750 bytes). Going forward, in-script comments in this build should stay terse — one line per alias/define, a short paragraph at most for anything genuinely non-obvious — with the full narrative living here in the handoff log instead, not duplicated into the script itself.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag done">2026-08-09</span>
+        <span class="body"><strong>Rider housing's O2/N2 filters no longer blindly mirror the pump — each gates on its own gas's excess partial pressure.</strong> Ryan's scenario: base atmosphere at 70% CO2 / 18% N2 / 12% O2, overpressure — filter CO2 (the actual problem), leave N2/O2 off since they're already deficient, not excess; once the ratio settles back near 60/20/20 while pressure is still elevated, all three should filter together again. Turns out the existing partial-pressure hysteresis (ratio × total pressure vs. a fixed target) already produces exactly this behavior on its own — a uniformly-scaled overpressure event with a correct ratio pushes <em>every</em> gas's partial pressure over its own threshold simultaneously, so "filter everything" falls out naturally once the ratio is stable, no separate detection logic needed. The only real bug was that <code>filtrationO2_800r</code>/<code>filtrationN2_800r</code> were gated on "is the pump on for any reason" instead of "is my own gas over target." Fixed by giving <code>atmospherics_recapture_riders.ic10</code> its own third cable to the shared GS-601 Gas Sensor (<code>sensor_800r</code>, replacing the old <code>pumpState_800r</code> pin — same pin count, 3) and computing N2/O2 excess independently there, using each filter's own On state as hysteresis memory instead of a bare register — cleaner than <code>atmospherics_recapture.ic10</code>'s r12/r15 workaround, since now the decision and the actuator are co-located on the same housing. <code>atmospherics_recapture.ic10</code>'s own N2/O2 excess checks (r12/r15) are unchanged and still needed — they're what brings the pump online whenever N2 or O2 is independently in excess, since both housings watch the same physical sensor with identical thresholds, no cross-housing signaling required.</span>
       </li>
     </ul>
 
@@ -697,6 +702,10 @@
       <li class="check-item">
         <span class="tag verify">Verify</span>
         <span class="body"><strong><code>N2_HIGH</code>/<code>N2_LOW</code> (60/58) and <code>O2_HIGH</code>/<code>O2_LOW</code> (20/19) in <code>atmospherics_recapture.ic10</code> haven't been run in-game yet.</strong> Both chosen to exactly match Regulation's own targets/lows, on the reasoning that both subsystems should agree on the equilibrium band — but the actual behavior of two housings independently converging on those bands (Regulation adding below the LOW threshold, Recapture skimming above the HIGH one) hasn't been observed running together for either gas. Also unconfirmed: whether the bare-register hysteresis memory (<code>r12</code> for N2, <code>r15</code> for O2) behaves as expected across many yield cycles — it's a standard technique, but this is the first time this build has used a register instead of a device's own On state for hysteresis memory. O2's trigger specifically hasn't even had a chance to fire yet, since O2 was under target when it was added — its first real test will be whenever O2 actually does run high.</span>
+      </li>
+      <li class="check-item">
+        <span class="tag verify">Verify</span>
+        <span class="body"><strong>Rider's independent O2/N2 gating (<code>atmospherics_recapture_riders.ic10</code>, rewritten 2026-08-09) hasn't been run in-game yet.</strong> Reasoned that a CO2-flooding scenario (70% CO2/18% N2/12% O2, overpressure) would correctly leave N2/O2 filters off since their own partial pressure stays under target even with pressure elevated, and that a "ratio stable but still overpressure" state would bring all three filters on together since every gas's partial pressure crosses its own threshold simultaneously in that case — verified the arithmetic on paper, not observed running in-game. Also unconfirmed: whether wiring a third cable onto GS-601 (now read by Area 600's main housing, Area 800's main housing, <em>and</em> Area 800's rider housing) behaves the same as the two-cable case already flagged as unverified above.</span>
       </li>
     </ul>
   </section>
@@ -1016,10 +1025,11 @@ alias filtrationMethaneH2_800 d4   <span class="c"># Methane+Hydrogen (2 cartrid
 
 <span class="c"># Everything captured goes to a tank, nothing returns to room - only Regulation adds gas.
 # RatioVolatiles is now RatioMethane (game rename). Hydrogen is separate from Methane.
-# O2/N2 filters live on atmospherics_recapture_riders.ic10 (_800r), mirror pump state.
+# O2/N2 filters live on atmospherics_recapture_riders.ic10 (_800r) - it independently
+# gates each on its OWN excess partial pressure now, not on this housing's pump state.
 # CO2/N2/O2 skim above target (hysteresis); Pollutant/Methane/H2 trigger on any presence.
-# N2/O2 hysteresis memory (r12/r15) are bare registers since the acting filter is on the
-# rider housing, not wired here.</span>
+# N2/O2 here (r12/r15) only feed the pump decision - the rider recomputes both from its
+# own sensor cable to gate its own filters, so a CO2 flood doesn't drag N2/O2 down too.</span>
 define CO2_HIGH 20
 define CO2_LOW  19
 define N2_HIGH  60
@@ -1084,39 +1094,53 @@ j main</pre>
     </div>
 
     <div class="script">
-      <div class="script-tab"><span class="name">atmospherics_recapture_riders.ic10</span><span class="housing">Area 800 · Recapture loop, companion housing · 3 pins · unchanged logic, both filters now also fire on the main housing's new excess triggers (2026-08-09)</span></div>
-      <pre>alias pumpState_800r    d0   <span class="c"># reads PU-801, the same Volume Pump atmospherics_recapture.ic10 writes to</span>
-alias filtrationO2_800r d1   <span class="c"># Filtration unit, O2 filter only - recovered O2 -> Area 500 O2 tank bank</span>
-alias filtrationN2_800r d2   <span class="c"># Filtration unit, N2 filter only - recovered N2 -> Area 300 TK-302</span>
+      <div class="script-tab"><span class="name">atmospherics_recapture_riders.ic10</span><span class="housing">Area 800 · Recapture loop, companion housing · 3 pins · rewritten to gate filters independently, not on pump state (2026-08-09)</span></div>
+      <pre>alias sensor_800r       d0   <span class="c"># Gas Sensor, SAME physical device as sensor_800/GS-601, via a 3rd cable</span>
+alias filtrationO2_800r d1   <span class="c"># O2 filter only - recovered O2 -> Area 500 O2 tank bank</span>
+alias filtrationN2_800r d2   <span class="c"># N2 filter only - recovered N2 -> Area 300 TK-302</span>
 
-<span class="c"># Both filters here just mirror the main housing's pump state - neither has its own
-# trigger logic on this housing, and neither needs its own room sensor, just a read on
-# the pump's current state.
-#
-# As of 2026-08-09, N2 and O2 both DO have real excess triggers now, they just live on
-# the main housing (atmospherics_recapture.ic10), not here. Ryan found the room sitting
-# at ~80% N2 with nothing anywhere in this build actively skimming a surplus back down,
-# so the main housing folds N2-excess (and, added preemptively, O2-excess) hysteresis
-# checks into its pump decision. This housing's logic for filtrationN2_800r/
-# filtrationO2_800r didn't need to change at all to pick that up - each already turns
-# on whenever the pump does, for whatever reason the pump has, whether that's CO2/N2/O2
-# excess or Pollutant/Methane/Hydrogen present.
-#
-# This is the companion to atmospherics_recapture.ic10, split out because one IC
-# housing only has 6 pins and the full recapture loop (sensor, pump, 5 filters) needs
-# 7 devices.
-#
-# Every alias in this build is suffixed by area number (_100, _200, etc.) - all IC
-# housings share one network, so alias names need to be globally unique. This housing
-# gets "_800r" ("r" for rider) to stay distinct from the main housing's "_800" and
-# from Area 300/500's own filtrationO2/filtrationN2 aliases.</span>
+<span class="c"># Each filter gates on its OWN gas's excess partial pressure now (same math
+# atmospherics_recapture.ic10 uses for CO2/N2/O2 on the pump), instead of blindly
+# mirroring the pump's On state. So a CO2 flooding event (e.g. 70% CO2/18% N2/12%
+# O2, overpressure) only trips the CO2 filter - N2/O2 stay off since their own
+# partial pressure isn't over target, even though the pump is running for CO2.
+# If the ratio later settles near 60/20/20 while pressure stays elevated, all
+# three gases' partial pressures cross their own threshold together, so all three
+# filters naturally turn on together too - no separate "stable ratio" check
+# needed, it falls out of using partial pressure (ratio x total pressure) rather
+# than raw ratio. No pump read needed here anymore - atmospherics_recapture.ic10
+# already brings the pump online whenever N2 or O2 is independently in excess,
+# since it watches the same physical sensor with the same thresholds.</span>
+define N2_HIGH 60
+define N2_LOW  58
+define O2_HIGH 20
+define O2_LOW  19
 
 main:
 yield
 
-l r0 pumpState_800r On
-s filtrationO2_800r On r0
-s filtrationN2_800r On r0
+l r0 sensor_800r Pressure
+l r1 sensor_800r RatioNitrogen
+mul r1 r1 r0
+l r2 filtrationN2_800r On
+beqz r2 n2_off
+sgt r3 r1 N2_LOW
+j n2_set
+n2_off:
+sgt r3 r1 N2_HIGH
+n2_set:
+s filtrationN2_800r On r3
+
+l r4 sensor_800r RatioOxygen
+mul r4 r4 r0
+l r5 filtrationO2_800r On
+beqz r5 o2_off
+sgt r6 r4 O2_LOW
+j o2_set
+o2_off:
+sgt r6 r4 O2_HIGH
+o2_set:
+s filtrationO2_800r On r6
 
 j main</pre>
     </div>
@@ -1322,7 +1346,7 @@ j main</pre>
       <h2>Resume here</h2>
       <span class="panel-num">next session</span>
     </div>
-    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive, 6 pins including two relief valves) — an N2 filter then an O2 filter, each into its own tank/network. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Area 500 is now <strong>gas production</strong>, not just O2 supply: the Electrolyzer is gone, replaced by two Ice Crushers — <code>atmospherics_icecrusher.ic10</code> (Oxite → O2/N2, feeding the same shared tanks Area 300 uses) and <code>atmospherics_n2osupply.ic10</code> (Nitrice → N2O, its own low-pressure/room-temperature branch since N2O condenses far more easily than anything else here — triple point ≈ −21°C, confirmed from the in-game phase graph). Wire <code>atmospherics_co2supply.ic10</code> (now 5 pins, added TK-301 and TK-401 relief valves) to the Liquid Tanks in Area 300 — Regulation's <code>co2Pump_600</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (sensor, pump, CO2/N2/O2/Pollutant/Methane+Hydrogen triggers) plus companion <code>atmospherics_recapture_riders.ic10</code> (O2/N2 filters) — plus a passive emergency buffer tank on its room-air intake for depressurization events. Every tank in the build now has its own relief valve venting to exterior, not just the two that started with one. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and the shared O2 network into the shared-room Regulation stage (60/20/20 N2/O2/CO2, three Turbo Volume Pumps). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, every relief valve's trip threshold, the N2O buffer's actual phase behavior, whether a Liquid Digital Valve gates TK-301 correctly, whether the rider housing actually tracks the main housing's pump state, whether the new N2- and O2-excess triggers and their bare-register hysteresis memory (<code>r12</code>, <code>r15</code>) actually bring the room back toward 60/20/20 once running, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
+    <p>Build the new collection stage first: place N Large Powered Vents (Mode=Inward, set once in-game), wire them to <code>atmospherics_intake.ic10</code> instead of leaving them always-on — they have no internal pressure limiter and will burst the raw pipe without IC gating, which is what happened before this fix. Raw buffer is a single <strong>Large Tank (Insulated)</strong>. From there 1–2 Turbo Volume Pumps per <code>atmospherics_compression.ic10</code> housing push it to HP, the line runs through exterior radiators, then a Condensation Valve drains liquid CO2 into <strong>2× Large Liquid Tank (Insulated)</strong>. The remaining gas now goes through <code>atmospherics_gassplit.ic10</code> (Area 300, no longer passive, 6 pins including two relief valves) — an N2 filter then an O2 filter, each into its own tank/network. Duplicate any housing (same sensor reading) if you have more devices than one housing's pins allow. Area 500 is now <strong>gas production</strong>, not just O2 supply: the Electrolyzer is gone, replaced by two Ice Crushers — <code>atmospherics_icecrusher.ic10</code> (Oxite → O2/N2, feeding the same shared tanks Area 300 uses) and <code>atmospherics_n2osupply.ic10</code> (Nitrice → N2O, its own low-pressure/room-temperature branch since N2O condenses far more easily than anything else here — triple point ≈ −21°C, confirmed from the in-game phase graph). Wire <code>atmospherics_co2supply.ic10</code> (now 5 pins, added TK-301 and TK-401 relief valves) to the Liquid Tanks in Area 300 — Regulation's <code>co2Pump_600</code> had no supply anywhere in this build until this housing was added. Area 800 (Recapture) is <strong>two</strong> IC housings — <code>atmospherics_recapture.ic10</code> (own sensor cable to GS-601, pump, CO2/Pollutant/Methane+Hydrogen filters, plus N2/O2 excess checks that only feed the pump decision) plus companion <code>atmospherics_recapture_riders.ic10</code> (its own third cable to GS-601, O2/N2 filters gated independently on their own excess) — plus a passive emergency buffer tank on its room-air intake for depressurization events. Every tank in the build now has its own relief valve venting to exterior, not just the two that started with one. Once collection is running and the status light confirms CO2 is actually condensing, feed the N2 tank and the shared O2 network into the shared-room Regulation stage (60/20/20 N2/O2/CO2, three Turbo Volume Pumps). Nothing here has been run in-game yet — treat the first real test as where new bugs surface, particularly <code>HP_TARGET</code>/<code>COND_TEMP_MAX</code>, every relief valve's trip threshold, the N2O buffer's actual phase behavior, whether a Liquid Digital Valve gates TK-301 correctly, whether the new N2- and O2-excess triggers and their bare-register hysteresis memory (<code>r12</code>, <code>r15</code>) actually bring the room back toward 60/20/20 once running, whether the rider housing's independently-gated O2/N2 filters correctly stay off during a CO2-dominated event and correctly join in once the ratio stabilizes, and whether the liquid CO2 line holds up under the Condensation Valve's gas-side pressure.</p>
   </section>
 
   <footer>

@@ -6,10 +6,11 @@ alias filtrationMethaneH2_800 d4   # Methane+Hydrogen (2 cartridges, 1 unit) -> 
 
 # Everything captured goes to a tank, nothing returns to room - only Regulation adds gas.
 # RatioVolatiles is now RatioMethane (game rename). Hydrogen is separate from Methane.
-# O2/N2 filters live on atmospherics_recapture_riders.ic10 (_800r), mirror pump state.
+# O2/N2 filters live on atmospherics_recapture_riders.ic10 (_800r) - it independently
+# gates each on its OWN excess partial pressure now, not on this housing's pump state.
 # CO2/N2/O2 skim above target (hysteresis); Pollutant/Methane/H2 trigger on any presence.
-# N2/O2 hysteresis memory (r12/r15) are bare registers since the acting filter is on the
-# rider housing, not wired here.
+# N2/O2 here (r12/r15) only feed the pump decision - the rider recomputes both from its
+# own sensor cable to gate its own filters, so a CO2 flood doesn't drag N2/O2 down too.
 define CO2_HIGH 20
 define CO2_LOW  19
 define N2_HIGH  60
