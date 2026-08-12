@@ -1,0 +1,23 @@
+define SensorHash HASH("StructureDaylightSensor")
+define PanelHash HASH("StructureSolarPanel1x5ReinforcedSingle")
+
+alias sunActive r0
+alias sunHorz r1
+alias sunVert r2
+
+main:
+lb sunActive SensorHash Activate Average
+beq sunActive 0 endloop
+
+lb sunHorz SensorHash Horizontal Average
+mod sunHorz sunHorz 360
+lb sunVert SensorHash Vertical Average
+sub sunVert 90 sunVert
+clamp sunVert sunVert 15 165
+
+sb PanelHash Horizontal sunHorz
+sb PanelHash Vertical sunVert
+
+endloop:
+yield
+j main
